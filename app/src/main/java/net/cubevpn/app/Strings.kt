@@ -257,7 +257,12 @@ object Strings {
         "login_not_configured" to "The account server isn't configured yet.",
         "account" to "Account",
         "logout" to "Sign out",
-        "logout_confirm" to "Sign out of your CubeVPN account on this device?"
+        "logout_confirm" to "Sign out of your CubeVPN account on this device?",
+        "my_services" to "My services",
+        "services_count" to "%d services",
+        "no_services_yet" to "No services yet. Once you buy a plan, it'll show up here automatically.",
+        "copy_sub_link" to "Copy subscription link",
+        "view_servers" to "View servers"
     )
 
     private val fa = mapOf(
@@ -504,7 +509,12 @@ object Strings {
         "login_not_configured" to "سرور حساب کاربری هنوز پیکربندی نشده است.",
         "account" to "حساب کاربری",
         "logout" to "خروج از حساب",
-        "logout_confirm" to "از حساب کیوب‌وی‌پی‌ان روی این دستگاه خارج شوید؟"
+        "logout_confirm" to "از حساب کیوب‌وی‌پی‌ان روی این دستگاه خارج شوید؟",
+        "my_services" to "سرویس‌های من",
+        "services_count" to "%d سرویس",
+        "no_services_yet" to "هنوز سرویسی ندارید. به محض خرید یک پلن، خودکار اینجا نمایش داده می‌شود.",
+        "copy_sub_link" to "کپی لینک اشتراک",
+        "view_servers" to "مشاهده سرورها"
     )
 
     fun get(lang: Lang, key: String): String =

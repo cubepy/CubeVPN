@@ -249,67 +249,67 @@ import java.time.LocalDate
 import kotlin.math.round
 import kotlin.math.sqrt
 
-// CubeVPN brand: near-black surfaces with a vivid red accent.
-private val SplashBackground = Color(0xFF0A0A0C)
+// CubeVPN brand: near-black surfaces with an indigo → violet → magenta gradient accent.
+private val SplashBackground = Color(0xFF0D0619)
 
 private val CubeLightColors = lightColorScheme(
-    primary = Color(0xFFD8102B),
+    primary = Color(0xFF7C3AED),
     onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFFFDADC),
-    onPrimaryContainer = Color(0xFF400008),
-    secondary = Color(0xFF79525A),
+    primaryContainer = Color(0xFFEDE1FF),
+    onPrimaryContainer = Color(0xFF2C0A5C),
+    secondary = Color(0xFF6B5A82),
     onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = Color(0xFFF4E7E8),
-    onSecondaryContainer = Color(0xFF2C161A),
-    background = Color(0xFFFAF7F7),
-    onBackground = Color(0xFF1C1517),
+    secondaryContainer = Color(0xFFEFE6F7),
+    onSecondaryContainer = Color(0xFF241934),
+    background = Color(0xFFFAF7FC),
+    onBackground = Color(0xFF1B1425),
     surface = Color(0xFFFFFFFF),
-    onSurface = Color(0xFF1C1517),
-    surfaceVariant = Color(0xFFF0E6E7),
-    onSurfaceVariant = Color(0xFF6B5257),
-    error = Color(0xFFBA1B2C),
+    onSurface = Color(0xFF1B1425),
+    surfaceVariant = Color(0xFFEDE6F4),
+    onSurfaceVariant = Color(0xFF5C5069),
+    error = Color(0xFFB3261E),
     onError = Color(0xFFFFFFFF),
-    outline = Color(0xFFD8C4C6)
+    outline = Color(0xFFD8CCE3)
 )
 
 private val CubeDarkColors = darkColorScheme(
-    primary = Color(0xFFFF2A44),
-    onPrimary = Color(0xFF2A0006),
-    primaryContainer = Color(0xFF4A0A16),
-    onPrimaryContainer = Color(0xFFFFD9DC),
-    secondary = Color(0xFFC79399),
-    onSecondary = Color(0xFF2E1216),
-    secondaryContainer = Color(0xFF2A1A1D),
-    onSecondaryContainer = Color(0xFFF2DEE1),
-    background = Color(0xFF0A0A0C),
-    onBackground = Color(0xFFEFE7E8),
-    surface = Color(0xFF141417),
-    onSurface = Color(0xFFEFE7E8),
-    surfaceVariant = Color(0xFF241A1C),
-    onSurfaceVariant = Color(0xFFC7AEB2),
-    error = Color(0xFFFF7A7A),
-    onError = Color(0xFF2A0A0A),
-    outline = Color(0xFF423033)
+    primary = Color(0xFFA855F7),
+    onPrimary = Color(0xFF1A0B2E),
+    primaryContainer = Color(0xFF3B1664),
+    onPrimaryContainer = Color(0xFFEBDCFF),
+    secondary = Color(0xFFC9A6E8),
+    onSecondary = Color(0xFF2A1444),
+    secondaryContainer = Color(0xFF241A33),
+    onSecondaryContainer = Color(0xFFEEE0F7),
+    background = Color(0xFF0D0619),
+    onBackground = Color(0xFFEDE7F3),
+    surface = Color(0xFF16101F),
+    onSurface = Color(0xFFEDE7F3),
+    surfaceVariant = Color(0xFF241A33),
+    onSurfaceVariant = Color(0xFFC3B3D6),
+    error = Color(0xFFFF6B81),
+    onError = Color(0xFF2A0A0F),
+    outline = Color(0xFF3E3153)
 )
 
 private val CubeAmoledColors = darkColorScheme(
-    primary = Color(0xFFFF2A44),
-    onPrimary = Color(0xFF2A0006),
-    primaryContainer = Color(0xFF33070F),
-    onPrimaryContainer = Color(0xFFFFD9DC),
-    secondary = Color(0xFFC79399),
-    onSecondary = Color(0xFF2E1216),
-    secondaryContainer = Color(0xFF150E10),
-    onSecondaryContainer = Color(0xFFF2DEE1),
+    primary = Color(0xFFA855F7),
+    onPrimary = Color(0xFF1A0B2E),
+    primaryContainer = Color(0xFF2A0F52),
+    onPrimaryContainer = Color(0xFFEBDCFF),
+    secondary = Color(0xFFC9A6E8),
+    onSecondary = Color(0xFF2A1444),
+    secondaryContainer = Color(0xFF140D1F),
+    onSecondaryContainer = Color(0xFFEEE0F7),
     background = Color(0xFF000000),
-    onBackground = Color(0xFFEFE7E8),
+    onBackground = Color(0xFFEDE7F3),
     surface = Color(0xFF000000),
-    onSurface = Color(0xFFEFE7E8),
-    surfaceVariant = Color(0xFF171012),
-    onSurfaceVariant = Color(0xFFC7AEB2),
-    error = Color(0xFFFF7A7A),
-    onError = Color(0xFF2A0A0A),
-    outline = Color(0xFF2E2224)
+    onSurface = Color(0xFFEDE7F3),
+    surfaceVariant = Color(0xFF130C1D),
+    onSurfaceVariant = Color(0xFFC3B3D6),
+    error = Color(0xFFFF6B81),
+    onError = Color(0xFF2A0A0F),
+    outline = Color(0xFF2B2140)
 )
 
 internal val LocalLang = compositionLocalOf { Lang.EN }
@@ -327,7 +327,7 @@ private fun CubeVpnMark(modifier: Modifier = Modifier, ringed: Boolean = false) 
         if (ringed) {
             Canvas(Modifier.matchParentSize()) {
                 drawCircle(
-                    color = Color(0xFFFF2A44).copy(alpha = 0.5f),
+                    color = Color(0xFFA855F7).copy(alpha = 0.5f),
                     radius = size.minDimension / 2f,
                     style = Stroke(width = size.minDimension * 0.03f)
                 )
@@ -339,7 +339,7 @@ private fun CubeVpnMark(modifier: Modifier = Modifier, ringed: Boolean = false) 
                 .clip(CircleShape)
                 .background(
                     Brush.linearGradient(
-                        listOf(Color(0xFF1A0206), Color(0xFF3A0A12), Color(0xFFD8102B))
+                        listOf(Color(0xFF1A0B2E), Color(0xFF6D28D9), Color(0xFFC026D3))
                     )
                 )
         ) {
@@ -367,7 +367,7 @@ private fun CubeVpnWordmark(modifier: Modifier = Modifier, height: Dp = 34.dp, t
         Text(
             buildAnnotatedString {
                 append("Cube")
-                withStyle(SpanStyle(color = Color(0xFFFF2A44))) { append("VPN") }
+                withStyle(SpanStyle(color = Color(0xFFA855F7))) { append("VPN") }
             },
             color = if (tint == Color.Unspecified) LocalContentColor.current else tint,
             fontWeight = FontWeight.Black,
@@ -908,6 +908,7 @@ private fun CubeVpnApp(
     val settingsScroll = rememberScrollState()
 
     var showPicker by remember { mutableStateOf(false) }
+    var showServices by remember { mutableStateOf(false) }
     var showManual by remember { mutableStateOf(false) }
     var editingConfig by remember { mutableStateOf<ProxyConfig?>(null) }
     val updateCtx = LocalContext.current
@@ -1059,12 +1060,13 @@ private fun CubeVpnApp(
 
     val page = pagerState.currentPage
     val onSettingsTab = page == 1
-    val subScreenOpen = (page == 0 && (showPicker || showManual || exportConfigs != null)) || (onSettingsTab && (usageDetail || perAppDetail || logsDetail || stabilityDetail || aboutDetail || cleanIpDetail || donationDetail || themeDetail))
+    val subScreenOpen = (page == 0 && (showPicker || showServices || showManual || exportConfigs != null)) || (onSettingsTab && (usageDetail || perAppDetail || logsDetail || stabilityDetail || aboutDetail || cleanIpDetail || donationDetail || themeDetail))
 
     val screenKey = when {
         page == 0 && exportConfigs != null -> "export"
         page == 0 && showManual -> "manual"
         page == 0 && showPicker -> "picker"
+        page == 0 && showServices -> "services"
         page == 0 -> "connection"
         onSettingsTab && usageDetail -> "usage"
         onSettingsTab && perAppDetail -> "perapp"
@@ -1082,6 +1084,7 @@ private fun CubeVpnApp(
             exportConfigs != null -> exportConfigs = null
             showManual -> { showManual = false; editingConfig = null }
             showPicker -> showPicker = false
+            showServices -> showServices = false
             usageDetail -> usageDetail = false
             perAppDetail -> perAppDetail = false
             logsDetail -> logsDetail = false
@@ -1122,6 +1125,7 @@ private fun CubeVpnApp(
                                 "manual" -> if (editingConfig != null) t("edit_config_title") else t("add_config_title")
                                 "export" -> t("export_title")
                                 "picker" -> t("choose_server")
+                                "services" -> t("my_services")
                                 "usage" -> t("data_usage")
                                 "perapp" -> t("per_app")
                                 "logs" -> t("xray_logs")
@@ -1140,6 +1144,7 @@ private fun CubeVpnApp(
                         "manual" -> BounceIconButton(onClick = { showManual = false; editingConfig = null }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                         "export" -> BounceIconButton(onClick = { exportConfigs = null }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                         "picker" -> BounceIconButton(onClick = { showPicker = false }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                        "services" -> BounceIconButton(onClick = { showServices = false }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                         "usage" -> BounceIconButton(onClick = { usageDetail = false }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                         "perapp" -> BounceIconButton(onClick = { perAppDetail = false }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                         "logs" -> BounceIconButton(onClick = { logsDetail = false }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
@@ -1192,7 +1197,7 @@ private fun CubeVpnApp(
                 NavigationBarItem(
                     selected = page == 0,
                     onClick = {
-                        showPicker = false; showManual = false; editingConfig = null
+                        showPicker = false; showServices = false; showManual = false; editingConfig = null
                         scope.launch { pagerState.animateScrollToPage(0) }
                     },
                     icon = { Icon(Icons.Filled.Bolt, contentDescription = null) },
@@ -1233,6 +1238,7 @@ private fun CubeVpnApp(
                     exportConfigs != null -> "export"
                     showManual -> "manual"
                     showPicker -> "picker"
+                    showServices -> "services"
                     else -> "connection"
                 }
                 AnimatedContent(
@@ -1273,10 +1279,15 @@ private fun CubeVpnApp(
                             onAddManually = { showManual = true },
                             onShareFile = { exportConfigs = it }
                         )
+                        "services" -> ServicesScreen(
+                            store = store,
+                            onViewServers = { showServices = false; showPicker = true }
+                        )
                         else -> ConnectionScreen(
                             store = store,
                             selectedId = selectedId,
                             onOpenPicker = { showPicker = true },
+                            onOpenServices = { showServices = true },
                             onConnect = onConnect,
                             onDisconnect = onDisconnect
                         )
@@ -1340,6 +1351,7 @@ private fun ConnectionScreen(
     store: ConfigStore,
     selectedId: String?,
     onOpenPicker: () -> Unit,
+    onOpenServices: () -> Unit,
     onConnect: (ProxyConfig) -> Unit,
     onDisconnect: () -> Unit,
     modifier: Modifier = Modifier
@@ -1348,6 +1360,7 @@ private fun ConnectionScreen(
     val lang = LocalLang.current
     val n: (String) -> String = { localizeDigits(it, lang) }
     val configs by store.configs.collectAsState()
+    val subscriptions by store.subscriptions.collectAsState()
     val conn by VpnState.state.collectAsState()
     val error by VpnState.error.collectAsState()
     val scope = rememberCoroutineScope()
@@ -1409,6 +1422,37 @@ private fun ConnectionScreen(
                             } else {
                                 Text(t("tap_choose"), style = MaterialTheme.typography.titleMedium)
                             }
+                        }
+                        Icon(Icons.Filled.ChevronRight, contentDescription = null)
+                    }
+                }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                        .clip(RoundedCornerShape(20.dp))
+                        .clickable { onOpenServices() },
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                ) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Filled.Bolt, contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(t("my_services"), style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                if (subscriptions.isEmpty()) t("no_services_yet") else n(t("services_count").format(subscriptions.size)),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                         Icon(Icons.Filled.ChevronRight, contentDescription = null)
                     }
@@ -1511,6 +1555,91 @@ private fun ConnectionScreen(
                     DotGlobeSection(Modifier.weight(1f).fillMaxWidth())
                 } else {
                     EarthSection(Modifier.weight(1f).fillMaxWidth())
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ServicesScreen(
+    store: ConfigStore,
+    onViewServers: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val t = stringsFn()
+    val lang = LocalLang.current
+    val subscriptions by store.subscriptions.collectAsState()
+    val configs by store.configs.collectAsState()
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
+
+    if (subscriptions.isEmpty()) {
+        Box(modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+            Text(
+                t("no_services_yet"),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+        return
+    }
+
+    LazyColumn(
+        modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        items(subscriptions, key = { it.id }) { sub ->
+            val serverCount = configs.count { it.subId == sub.id }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+            ) {
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(sub.name, style = MaterialTheme.typography.titleMedium)
+                    if (sub.total > 0) UsageBar(used = sub.used, total = sub.total)
+                    usageText(sub, lang)?.let {
+                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Text(
+                        localizeDigits(t("services_count").format(serverCount), lang),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            sub.url,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            Icons.Filled.ContentCopy,
+                            contentDescription = t("copy_sub_link"),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .clickable {
+                                    clipboard.setText(AnnotatedString(sub.url))
+                                    android.widget.Toast.makeText(context, t("copied"), android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                                .padding(6.dp)
+                                .size(18.dp)
+                        )
+                    }
+                    BounceOutlinedButton(onClick = onViewServers, modifier = Modifier.fillMaxWidth()) {
+                        Text(t("view_servers"))
+                    }
                 }
             }
         }
@@ -2692,7 +2821,7 @@ private fun SettingsScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Icon(Icons.Filled.Favorite, contentDescription = null,
-                    tint = Color(0xFFFF2A44), modifier = Modifier.padding(end = 12.dp))
+                    tint = Color(0xFFC026D3), modifier = Modifier.padding(end = 12.dp))
                 Icon(Icons.Filled.ChevronRight, contentDescription = null)
             }
         }

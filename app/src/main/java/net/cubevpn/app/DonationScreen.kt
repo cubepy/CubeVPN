@@ -75,7 +75,7 @@ fun DonationScreen(modifier: Modifier = Modifier) {
                 .clip(RoundedCornerShape(22.dp))
                 .background(
                     Brush.linearGradient(
-                        listOf(Color(0xFF0A0A0C), Color(0xFF3A0A12), Color(0xFFD8102B))
+                        listOf(Color(0xFF0D0619), Color(0xFF6D28D9), Color(0xFFC026D3))
                     )
                 )
                 .clickable {
