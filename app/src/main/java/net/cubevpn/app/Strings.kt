@@ -264,7 +264,12 @@ object Strings {
         "copy_sub_link" to "Copy subscription link",
         "view_servers" to "View servers",
         "add_to_servers" to "Add to my servers",
-        "retry" to "Retry"
+        "retry" to "Retry",
+        "scan_qr" to "Scan QR code",
+        "scan_qr_hint" to "Point the camera at a config QR code",
+        "camera_permission_needed" to "Camera permission is needed to scan a QR code",
+        "qr_added" to "Added from QR code",
+        "qr_parse_failed" to "That QR code isn't a config link"
     )
 
     private val fa = mapOf(
@@ -518,7 +523,12 @@ object Strings {
         "copy_sub_link" to "کپی لینک اشتراک",
         "view_servers" to "مشاهده سرورها",
         "add_to_servers" to "افزودن به سرورهای من",
-        "retry" to "تلاش دوباره"
+        "retry" to "تلاش دوباره",
+        "scan_qr" to "اسکن کد QR",
+        "scan_qr_hint" to "دوربین را روی کد QR کانفیگ بگیرید",
+        "camera_permission_needed" to "برای اسکن کد QR به دسترسی دوربین نیاز است",
+        "qr_added" to "از روی کد QR اضافه شد",
+        "qr_parse_failed" to "این کد QR یک لینک کانفیگ نیست"
     )
 
     fun get(lang: Lang, key: String): String =
