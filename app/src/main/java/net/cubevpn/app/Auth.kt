@@ -35,7 +35,6 @@ object AuthApi {
     suspend fun requestCode(identifier: String): AuthResult = withContext(Dispatchers.IO) {
         val body = JSONObject().put("identifier", identifier)
         val res = postJson("/api/requestcode.php", body, token = null)
-        if (res == null) return@withContext AuthResult.Error("network", "Network error")
         if (res.optBoolean("ok", false)) {
             AuthResult.RequestCodeOk(res.optInt("cooldown_seconds", 60))
         } else {
@@ -46,7 +45,6 @@ object AuthApi {
     suspend fun verifyCode(identifier: String, code: String): AuthResult = withContext(Dispatchers.IO) {
         val body = JSONObject().put("identifier", identifier).put("code", code)
         val res = postJson("/api/verifycode.php", body, token = null)
-        if (res == null) return@withContext AuthResult.Error("network", "Network error")
         if (res.optBoolean("ok", false)) {
             val token = res.optString("token")
             val u = res.optJSONObject("user")
@@ -69,7 +67,6 @@ object AuthApi {
 
     suspend fun fetchAccount(token: String): AuthResult = withContext(Dispatchers.IO) {
         val res = getJson("/api/accountme.php", token)
-        if (res == null) return@withContext AuthResult.Error("network", "Network error")
         if (res.optBoolean("ok", false)) {
             val u = res.optJSONObject("user")
             val user = AuthUser(
@@ -105,14 +102,15 @@ object AuthApi {
     private fun errorFrom(res: JSONObject): AuthResult.Error =
         AuthResult.Error(res.optString("error", "unknown"), res.optString("message", "Request failed"))
 
-    private fun postJson(path: String, body: JSONObject, token: String?): JSONObject? =
+    private fun postJson(path: String, body: JSONObject, token: String?): JSONObject =
         request("POST", path, body, token)
 
-    private fun getJson(path: String, token: String?): JSONObject? =
+    private fun getJson(path: String, token: String?): JSONObject =
         request("GET", path, null, token)
 
-    private fun request(method: String, path: String, body: JSONObject?, token: String?): JSONObject? {
-        if (BASE.isBlank()) return null
+    /** Never throws or returns null — network/parse failures come back as a synthetic `ok:false` JSONObject with a diagnostic message. */
+    private fun request(method: String, path: String, body: JSONObject?, token: String?): JSONObject {
+        if (BASE.isBlank()) return networkError("API_BASE_URL is not configured in this build")
         return try {
             val conn = (URL(BASE + path).openConnection() as HttpURLConnection).apply {
                 requestMethod = method
@@ -126,12 +124,21 @@ object AuthApi {
                     outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
                 }
             }
-            val stream = if (conn.responseCode in 200..299) conn.inputStream else conn.errorStream
-            val text = stream?.use { it.readBytes().toString(Charsets.UTF_8) } ?: return null
+            val code = conn.responseCode
+            val stream = if (code in 200..299) conn.inputStream else conn.errorStream
+            val text = stream?.use { it.readBytes().toString(Charsets.UTF_8) }
             conn.disconnect()
-            JSONObject(text)
+            if (text.isNullOrBlank()) return networkError("server returned HTTP $code with an empty body")
+            try {
+                JSONObject(text)
+            } catch (e: Exception) {
+                networkError("HTTP $code, non-JSON response: ${text.take(200)}")
+            }
         } catch (e: Exception) {
-            null
+            networkError("${e.javaClass.simpleName}: ${e.message}")
         }
     }
+
+    private fun networkError(detail: String): JSONObject =
+        JSONObject().put("ok", false).put("error", "network").put("message", "Network error — $detail")
 }

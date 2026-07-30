@@ -347,13 +347,13 @@ private fun CubeVpnMark(modifier: Modifier = Modifier, ringed: Boolean = false) 
                 val w = size.width; val h = size.height
                 val stroke = size.minDimension * 0.1f
                 val path = Path().apply {
-                    moveTo(w * 0.30f, h * 0.68f)
-                    lineTo(w * 0.50f, h * 0.42f)
-                    lineTo(w * 0.68f, h * 0.56f)
-                    lineTo(w * 0.80f, h * 0.34f)
+                    moveTo(w * 0.28f, h * 0.67f)
+                    lineTo(w * 0.46f, h * 0.44f)
+                    lineTo(w * 0.59f, h * 0.56f)
+                    lineTo(w * 0.72f, h * 0.33f)
                 }
                 drawPath(path, color = Color.White, style = Stroke(width = stroke, cap = StrokeCap.Round))
-                drawCircle(Color.White, radius = stroke * 0.65f, center = Offset(w * 0.80f, h * 0.34f))
+                drawCircle(Color.White, radius = stroke * 0.65f, center = Offset(w * 0.72f, h * 0.33f))
             }
         }
     }
@@ -585,7 +585,13 @@ private fun LoginIdentifierScreen(
     ) {
         CubeVpnMark(ringed = true, modifier = Modifier.size(112.dp))
         Spacer(Modifier.height(24.dp))
-        Text(t("login_title"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+        Text(
+            t("login_title"),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center
+        )
         Spacer(Modifier.height(8.dp))
         Text(
             t("login_subtitle"),
@@ -642,7 +648,13 @@ private fun OtpVerifyScreen(
     ) {
         CubeVpnMark(ringed = true, modifier = Modifier.size(96.dp))
         Spacer(Modifier.height(24.dp))
-        Text(t("login_otp_title"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+        Text(
+            t("login_otp_title"),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center
+        )
         Spacer(Modifier.height(8.dp))
         Text(
             t("login_otp_subtitle").format(identifier),
