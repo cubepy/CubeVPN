@@ -5,9 +5,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import androidx.core.content.ContextCompat
+import androidx.glance.appwidget.updateAll
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 data class VpnCounters(
     val totalUp: Long = 0L,
@@ -33,6 +38,8 @@ object VpnBridge {
     private val _counters = MutableStateFlow(VpnCounters())
     val counters: StateFlow<VpnCounters> = _counters.asStateFlow()
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     @Volatile private var registered = false
 
     fun register(context: Context) {
@@ -42,15 +49,20 @@ object VpnBridge {
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(ctx: Context, intent: Intent) {
                 when (intent.getStringExtra(EX_STATE)) {
-                    S_CONNECTED -> VpnState.setConnected()
+                    S_CONNECTED -> {
+                        VpnState.setConnected()
+                        refreshWidget(app)
+                    }
                     S_ERROR -> {
                         VpnState.setError(intent.getStringExtra(EX_ERROR) ?: "Connection failed")
                         _counters.value = VpnCounters()
+                        refreshWidget(app)
                     }
                     S_DISCONNECTED -> {
                         VpnState.setDisconnected()
                         _counters.value = VpnCounters()
                         UsageStore.flush()
+                        refreshWidget(app)
                     }
                     S_COUNTERS -> {
                         val tup = intent.getLongExtra(EX_TOTAL_UP, 0L)
@@ -64,6 +76,10 @@ object VpnBridge {
             }
         }
         ContextCompat.registerReceiver(app, receiver, IntentFilter(ACTION), ContextCompat.RECEIVER_NOT_EXPORTED)
+    }
+
+    private fun refreshWidget(app: Context) {
+        scope.launch { runCatching { CubeVpnWidget().updateAll(app) } }
     }
 
     private fun send(ctx: Context, state: String, error: String?, tup: Long, tdown: Long, dup: Long, ddown: Long) {
