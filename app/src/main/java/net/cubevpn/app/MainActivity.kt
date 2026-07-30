@@ -104,6 +104,7 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.DarkMode
@@ -1756,10 +1757,17 @@ private fun ConfigPickerScreen(
     var addDone by remember { mutableStateOf("") }
     var testAllState by remember { mutableStateOf(0) }
     var addMenu by remember { mutableStateOf(false) }
+    var showQrScan by remember { mutableStateOf(false) }
     val expandedSubs by store.expandedSubs.collectAsState()
     val scope = rememberCoroutineScope()
 
     val context = LocalContext.current
+    val cameraPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) showQrScan = true
+        else android.widget.Toast.makeText(context, t("camera_permission_needed"), android.widget.Toast.LENGTH_SHORT).show()
+    }
     val haptic = LocalHapticFeedback.current
     val selected = remember { mutableStateMapOf<String, Boolean>() }
     var selectionMode by remember { mutableStateOf(false) }
@@ -1919,6 +1927,19 @@ private fun ConfigPickerScreen(
         }
     }
 
+    if (showQrScan) {
+        QrScanScreen(
+            onResult = { value ->
+                showQrScan = false
+                link = value
+                doAdd()
+            },
+            onCancel = { showQrScan = false },
+            modifier = modifier
+        )
+        return
+    }
+
     Column(
         modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -1987,6 +2008,10 @@ private fun ConfigPickerScreen(
                         }
                         CompactMenuItem(Icons.Filled.Add, t("add_manually")) {
                             addMenu = false; onAddManually()
+                        }
+                        CompactMenuItem(Icons.Filled.QrCodeScanner, t("scan_qr")) {
+                            addMenu = false
+                            cameraPermission.launch(android.Manifest.permission.CAMERA)
                         }
                         CompactMenuItem(Icons.Filled.UploadFile, t("import_button")) {
                             addMenu = false
