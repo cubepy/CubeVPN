@@ -79,7 +79,7 @@ statistics stay on your device and are never transmitted elsewhere.
 
 ## Support
 
-Questions or issues? Reach us on Telegram at [@cubevvpn_bot](https://t.me/cubevvpn_bot).
+Questions or issues? Reach us on Telegram at [@cube_sup](https://t.me/cube_sup), or follow [@cube_vpnn](https://t.me/cube_vpnn) for updates.
 
 ## License
 

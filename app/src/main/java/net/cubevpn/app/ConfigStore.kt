@@ -178,6 +178,9 @@ class ConfigStore private constructor(context: Context) {
     private val _lang = MutableStateFlow(loadLang())
     val lang: StateFlow<Lang> = _lang.asStateFlow()
 
+    private val _langChosen = MutableStateFlow(prefs.contains(KEY_LANG))
+    val langChosen: StateFlow<Boolean> = _langChosen.asStateFlow()
+
     private val _themeMode = MutableStateFlow(loadThemeMode())
     val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
 
@@ -200,6 +203,7 @@ class ConfigStore private constructor(context: Context) {
 
     fun setLang(lang: Lang) {
         _lang.value = lang
+        _langChosen.value = true
         prefs.edit().putString(KEY_LANG, lang.name).apply()
     }
 
