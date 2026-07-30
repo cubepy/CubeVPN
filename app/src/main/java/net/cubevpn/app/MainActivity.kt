@@ -471,6 +471,76 @@ private fun WelcomeScreen(onDone: () -> Unit) {
         )
     }
 }
+@Composable
+private fun LanguagePickerScreen(onChoose: (Lang) -> Unit) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(SplashBackground)
+            .navigationBarsPadding()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        CubeVpnMark(ringed = true, modifier = Modifier.size(96.dp))
+        Spacer(Modifier.height(24.dp))
+        Text(
+            "زبان خود را انتخاب کنید",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            fontFamily = VazirFont,
+            color = Color.White,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "Choose your language",
+            style = MaterialTheme.typography.bodyMedium,
+            fontFamily = LexendFont,
+            color = Color(0xFFAAB4C4),
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(32.dp))
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(18.dp))
+                .clickable { onChoose(Lang.FA) },
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF16101F))
+        ) {
+            Text(
+                "فارسی",
+                style = MaterialTheme.typography.titleMedium,
+                fontFamily = VazirFont,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp)
+            )
+        }
+        Spacer(Modifier.height(14.dp))
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(18.dp))
+                .clickable { onChoose(Lang.EN) },
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF16101F))
+        ) {
+            Text(
+                "English",
+                style = MaterialTheme.typography.titleMedium,
+                fontFamily = LexendFont,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp)
+            )
+        }
+    }
+}
+
 private enum class AuthStep { IDENTIFIER, OTP }
 
 @Composable
@@ -750,26 +820,31 @@ class MainActivity : ComponentActivity() {
                     LocalLang provides lang,
                     LocalLayoutDirection provides direction
                 ) {
-                    var showWelcome by remember { mutableStateOf(true) }
-                    var startMain by remember { mutableStateOf(false) }
-                    LaunchedEffect(Unit) {
-                        delay(1100)
-                        startMain = true
-                    }
-                    val authToken by store.authToken.collectAsState()
-                    Box {
-                        if (startMain) {
-                            if (authToken != null) {
-                                CubeVpnApp(store = store, onConnect = ::connectTo, onDisconnect = ::disconnect, onSwitch = ::switchTo)
-                            } else {
-                                AuthGate(store = store)
-                            }
+                    val langChosen by store.langChosen.collectAsState()
+                    if (!langChosen) {
+                        LanguagePickerScreen(onChoose = { store.setLang(it) })
+                    } else {
+                        var showWelcome by remember { mutableStateOf(true) }
+                        var startMain by remember { mutableStateOf(false) }
+                        LaunchedEffect(Unit) {
+                            delay(1100)
+                            startMain = true
                         }
-                        AnimatedVisibility(
-                            visible = showWelcome,
-                            exit = fadeOut(tween(400))
-                        ) {
-                            WelcomeScreen(onDone = { showWelcome = false })
+                        val authToken by store.authToken.collectAsState()
+                        Box {
+                            if (startMain) {
+                                if (authToken != null) {
+                                    CubeVpnApp(store = store, onConnect = ::connectTo, onDisconnect = ::disconnect, onSwitch = ::switchTo)
+                                } else {
+                                    AuthGate(store = store)
+                                }
+                            }
+                            AnimatedVisibility(
+                                visible = showWelcome,
+                                exit = fadeOut(tween(400))
+                            ) {
+                                WelcomeScreen(onDone = { showWelcome = false })
+                            }
                         }
                     }
                 }
@@ -3147,7 +3222,7 @@ private fun AboutScreen(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .padding(top = 8.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .clickable { runCatching { uriHandler.openUri("https://t.me/cubevvpn_bot") } }
+                .clickable { runCatching { uriHandler.openUri("https://t.me/cube_sup") } }
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             Icon(
@@ -3157,6 +3232,26 @@ private fun AboutScreen(modifier: Modifier = Modifier) {
             )
             Text(
                 t("telegram_support"),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .clickable { runCatching { uriHandler.openUri("https://t.me/cube_vpnn") } }
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
+            Icon(
+                TelegramIcon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                t("telegram_channel"),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -3200,7 +3295,7 @@ Permissions: The VPN permission is used solely to route traffic through the tunn
 
 Changes: This policy may be updated as the app evolves; material changes will be noted in new releases.
 
-Contact: Questions? Reach us on Telegram at @cubevvpn_bot.
+Contact: Questions? Reach us on Telegram at @cube_sup, or join @cube_vpnn for updates.
 """.trimIndent()
 
 private val PRIVACY_FA = """
@@ -3218,7 +3313,7 @@ private val PRIVACY_FA = """
 
 تغییرات: این سیاست ممکن است با تکامل برنامه به‌روزرسانی شود؛ تغییرات مهم در نسخه‌های جدید اعلام می‌شوند.
 
-تماس: سؤالی دارید؟ از طریق تلگرام با @cubevvpn_bot در ارتباط باشید.
+تماس: سؤالی دارید؟ از طریق تلگرام با @cube_sup در ارتباط باشید، یا برای اطلاع از اخبار به کانال @cube_vpnn بپیوندید.
 """.trimIndent()
 
 @Composable

@@ -66,7 +66,7 @@ Kotlin · Jetpack Compose · Material 3 · Xray-core (از طریق پل gomobil
 
 ## پشتیبانی
 
-سؤال یا مشکلی دارید؟ از طریق تلگرام با [@cubevvpn_bot](https://t.me/cubevvpn_bot) در ارتباط باشید.
+سؤال یا مشکلی دارید؟ از طریق تلگرام با [@cube_sup](https://t.me/cube_sup) در ارتباط باشید، یا برای اطلاع از اخبار به کانال [@cube_vpnn](https://t.me/cube_vpnn) بپیوندید.
 
 ## لایسنس
 
