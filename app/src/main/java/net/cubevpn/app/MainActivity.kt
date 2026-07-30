@@ -503,33 +503,6 @@ private fun AuthGate(store: ConfigStore) {
         }
     }
 
-    fun syncServices(token: String) {
-        scope.launch {
-            val res = AuthApi.fetchAccount(token)
-            if (res is AuthResult.AccountOk) {
-                res.services.forEach { svc ->
-                    if (svc.subscriptionUrl.isBlank()) return@forEach
-                    runCatching {
-                        val fetched = SubscriptionFetcher.fetchFull(svc.subscriptionUrl)
-                        val info = fetched.userInfo
-                        store.upsertSubscription(
-                            Subscription(
-                                name = svc.name.ifBlank { "Service" },
-                                url = svc.subscriptionUrl,
-                                used = info?.used ?: svc.usedBytes,
-                                total = info?.total ?: svc.totalBytes,
-                                expire = info?.expire ?: svc.expire,
-                                lastUpdated = System.currentTimeMillis(),
-                                id = svc.id.ifBlank { java.util.UUID.randomUUID().toString() }
-                            ),
-                            fetched.configs
-                        )
-                    }
-                }
-            }
-        }
-    }
-
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when (step) {
             AuthStep.IDENTIFIER -> LoginIdentifierScreen(
@@ -553,7 +526,6 @@ private fun AuthGate(store: ConfigStore) {
                         when (val res = AuthApi.verifyCode(identifier.trim(), code.trim())) {
                             is AuthResult.VerifyOk -> {
                                 store.login(res.token, res.user.identifier.ifBlank { identifier }, res.user.displayName)
-                                syncServices(res.token)
                             }
                             is AuthResult.Error -> { error = res.message; loading = false }
                             else -> loading = false
@@ -911,6 +883,24 @@ private fun CubeVpnApp(
     var showServices by remember { mutableStateOf(false) }
     var showManual by remember { mutableStateOf(false) }
     var editingConfig by remember { mutableStateOf<ProxyConfig?>(null) }
+
+    var accountServices by remember { mutableStateOf<List<AccountService>>(emptyList()) }
+    var accountServicesLoading by remember { mutableStateOf(false) }
+    var accountServicesError by remember { mutableStateOf<String?>(null) }
+    fun refreshAccountServices() {
+        val token = store.authToken.value ?: return
+        accountServicesLoading = true
+        scope.launch {
+            when (val res = AuthApi.fetchAccount(token)) {
+                is AuthResult.AccountOk -> { accountServices = res.services; accountServicesError = null }
+                is AuthResult.Error -> accountServicesError = res.message
+                else -> {}
+            }
+            accountServicesLoading = false
+        }
+    }
+    LaunchedEffect(Unit) { refreshAccountServices() }
+
     val updateCtx = LocalContext.current
     val updateUri = LocalUriHandler.current
     var updateAvailable by remember { mutableStateOf<UpdateChecker.Result.Available?>(null) }
@@ -1281,11 +1271,16 @@ private fun CubeVpnApp(
                         )
                         "services" -> ServicesScreen(
                             store = store,
+                            services = accountServices,
+                            loading = accountServicesLoading,
+                            error = accountServicesError,
+                            onRetry = { refreshAccountServices() },
                             onViewServers = { showServices = false; showPicker = true }
                         )
                         else -> ConnectionScreen(
                             store = store,
                             selectedId = selectedId,
+                            serviceCount = accountServices.size,
                             onOpenPicker = { showPicker = true },
                             onOpenServices = { showServices = true },
                             onConnect = onConnect,
@@ -1350,6 +1345,7 @@ private fun CubeVpnApp(
 private fun ConnectionScreen(
     store: ConfigStore,
     selectedId: String?,
+    serviceCount: Int,
     onOpenPicker: () -> Unit,
     onOpenServices: () -> Unit,
     onConnect: (ProxyConfig) -> Unit,
@@ -1360,7 +1356,6 @@ private fun ConnectionScreen(
     val lang = LocalLang.current
     val n: (String) -> String = { localizeDigits(it, lang) }
     val configs by store.configs.collectAsState()
-    val subscriptions by store.subscriptions.collectAsState()
     val conn by VpnState.state.collectAsState()
     val error by VpnState.error.collectAsState()
     val scope = rememberCoroutineScope()
@@ -1447,7 +1442,7 @@ private fun ConnectionScreen(
                         Column(Modifier.weight(1f)) {
                             Text(t("my_services"), style = MaterialTheme.typography.bodyLarge)
                             Text(
-                                if (subscriptions.isEmpty()) t("no_services_yet") else n(t("services_count").format(subscriptions.size)),
+                                if (serviceCount == 0) t("no_services_yet") else n(t("services_count").format(serviceCount)),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
@@ -1564,17 +1559,68 @@ private fun ConnectionScreen(
 @Composable
 private fun ServicesScreen(
     store: ConfigStore,
+    services: List<AccountService>,
+    loading: Boolean,
+    error: String?,
+    onRetry: () -> Unit,
     onViewServers: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val t = stringsFn()
     val lang = LocalLang.current
+    val n: (String) -> String = { localizeDigits(it, lang) }
     val subscriptions by store.subscriptions.collectAsState()
-    val configs by store.configs.collectAsState()
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
+    val scope = rememberCoroutineScope()
+    val addedUrls = remember(subscriptions) { subscriptions.map { it.url }.toSet() }
+    val adding = remember { mutableStateMapOf<String, Boolean>() }
 
-    if (subscriptions.isEmpty()) {
+    fun addToServers(svc: AccountService) {
+        if (svc.subscriptionUrl.isBlank() || adding[svc.id] == true) return
+        adding[svc.id] = true
+        scope.launch {
+            runCatching {
+                val fetched = SubscriptionFetcher.fetchFull(svc.subscriptionUrl)
+                val info = fetched.userInfo
+                store.upsertSubscription(
+                    Subscription(
+                        name = svc.name.ifBlank { "Service" },
+                        url = svc.subscriptionUrl,
+                        used = info?.used ?: svc.usedBytes,
+                        total = info?.total ?: svc.totalBytes,
+                        expire = info?.expire ?: svc.expire,
+                        lastUpdated = System.currentTimeMillis(),
+                        id = svc.id.ifBlank { java.util.UUID.randomUUID().toString() }
+                    ),
+                    fetched.configs
+                )
+            }
+            adding[svc.id] = false
+        }
+    }
+
+    if (loading && services.isEmpty() && error == null) {
+        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    if (error != null && services.isEmpty()) {
+        Column(
+            modifier.fillMaxSize().padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(error, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(12.dp))
+            BounceOutlinedButton(onClick = onRetry) { Text(t("retry")) }
+        }
+        return
+    }
+
+    if (services.isEmpty()) {
         Box(modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
             Text(
                 t("no_services_yet"),
@@ -1590,60 +1636,81 @@ private fun ServicesScreen(
         modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(subscriptions, key = { it.id }) { sub ->
-            val serverCount = configs.count { it.subId == sub.id }
+        items(services, key = { it.id.ifBlank { it.subscriptionUrl } }) { svc ->
+            val added = svc.subscriptionUrl in addedUrls
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
             ) {
                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(sub.name, style = MaterialTheme.typography.titleMedium)
-                    if (sub.total > 0) UsageBar(used = sub.used, total = sub.total)
-                    usageText(sub, lang)?.let {
+                    Text(svc.name, style = MaterialTheme.typography.titleMedium)
+                    if (svc.totalBytes > 0) UsageBar(used = svc.usedBytes, total = svc.totalBytes)
+                    accountServiceUsageText(svc, lang)?.let {
                         Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Text(
-                        localizeDigits(t("services_count").format(serverCount), lang),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Row(
-                        Modifier.fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            sub.url,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Icon(
-                            Icons.Filled.ContentCopy,
-                            contentDescription = t("copy_sub_link"),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .clickable {
-                                    clipboard.setText(AnnotatedString(sub.url))
-                                    android.widget.Toast.makeText(context, t("copied"), android.widget.Toast.LENGTH_SHORT).show()
-                                }
-                                .padding(6.dp)
-                                .size(18.dp)
-                        )
-                    }
-                    BounceOutlinedButton(onClick = onViewServers, modifier = Modifier.fillMaxWidth()) {
-                        Text(t("view_servers"))
+                    if (svc.subscriptionUrl.isNotBlank()) {
+                        Row(
+                            Modifier.fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                svc.subscriptionUrl,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(
+                                Icons.Filled.ContentCopy,
+                                contentDescription = t("copy_sub_link"),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(50))
+                                    .clickable {
+                                        clipboard.setText(AnnotatedString(svc.subscriptionUrl))
+                                        android.widget.Toast.makeText(context, t("copied"), android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                    .padding(6.dp)
+                                    .size(18.dp)
+                            )
+                        }
+                        if (added) {
+                            BounceOutlinedButton(onClick = onViewServers, modifier = Modifier.fillMaxWidth()) {
+                                Text(t("view_servers"))
+                            }
+                        } else {
+                            BounceButton(
+                                onClick = { addToServers(svc) },
+                                enabled = adding[svc.id] != true,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(if (adding[svc.id] == true) "…" else t("add_to_servers"))
+                            }
+                        }
                     }
                 }
             }
         }
     }
+}
+
+private fun accountServiceUsageText(svc: AccountService, lang: Lang): String? {
+    if (svc.totalBytes <= 0 && svc.expire <= 0) return null
+    val parts = mutableListOf<String>()
+    if (svc.totalBytes > 0) {
+        val remaining = (svc.totalBytes - svc.usedBytes).coerceAtLeast(0)
+        parts.add("${formatBytes(remaining, lang)} ${Strings.get(lang, "of")} ${formatBytes(svc.totalBytes, lang)} ${Strings.get(lang, "left")}")
+    }
+    if (svc.expire > 0) {
+        val daysLeft = (svc.expire * 1000 - System.currentTimeMillis()) / 86_400_000L
+        if (daysLeft >= 0) parts.add("${Strings.get(lang, "expires_in")} ${localizeDigits("$daysLeft", lang)}${Strings.get(lang, "unit_days")}")
+    }
+    return parts.joinToString("  •  ")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

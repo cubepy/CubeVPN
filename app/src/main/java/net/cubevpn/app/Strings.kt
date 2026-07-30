@@ -262,7 +262,9 @@ object Strings {
         "services_count" to "%d services",
         "no_services_yet" to "No services yet. Once you buy a plan, it'll show up here automatically.",
         "copy_sub_link" to "Copy subscription link",
-        "view_servers" to "View servers"
+        "view_servers" to "View servers",
+        "add_to_servers" to "Add to my servers",
+        "retry" to "Retry"
     )
 
     private val fa = mapOf(
@@ -514,7 +516,9 @@ object Strings {
         "services_count" to "%d سرویس",
         "no_services_yet" to "هنوز سرویسی ندارید. به محض خرید یک پلن، خودکار اینجا نمایش داده می‌شود.",
         "copy_sub_link" to "کپی لینک اشتراک",
-        "view_servers" to "مشاهده سرورها"
+        "view_servers" to "مشاهده سرورها",
+        "add_to_servers" to "افزودن به سرورهای من",
+        "retry" to "تلاش دوباره"
     )
 
     fun get(lang: Lang, key: String): String =
