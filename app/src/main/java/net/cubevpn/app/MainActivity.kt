@@ -930,7 +930,7 @@ private fun CubeVpnApp(
             title = { Text(t("update_available").format(upd.version)) },
             confirmButton = {
                 TextButton(onClick = {
-                    runCatching { updateUri.openUri(upd.url) }
+                    runCatching { updateUri.openUri(upd.downloadUrl) }
                     updateAvailable = null
                 }) { Text(t("update_now")) }
             },
@@ -2996,7 +2996,7 @@ private fun AboutScreen(modifier: Modifier = Modifier) {
                             when (val r = UpdateChecker.check(appVersion)) {
                                 is UpdateChecker.Result.Available -> {
                                     updateStatus = t("update_available").format(r.version)
-                                    updateUrl = r.url
+                                    updateUrl = r.downloadUrl
                                 }
                                 UpdateChecker.Result.UpToDate -> updateStatus = t("up_to_date")
                                 UpdateChecker.Result.Failed -> updateStatus = t("update_failed")

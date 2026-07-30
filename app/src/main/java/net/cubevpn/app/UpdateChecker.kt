@@ -14,7 +14,8 @@ object UpdateChecker {
     private val RELEASES get() = "https://github.com/$REPO/releases/latest"
 
     sealed interface Result {
-        data class Available(val version: String, val url: String) : Result
+        /** [downloadUrl] is the .apk asset matching this device's ABI when found, otherwise the release page. */
+        data class Available(val version: String, val downloadUrl: String) : Result
         data object UpToDate : Result
         data object Failed : Result
     }
@@ -36,15 +37,31 @@ object UpdateChecker {
             }
             val o = JSONObject(body)
             val tag = o.optString("tag_name").removePrefix("v").removePrefix("V").trim()
-            val url = o.optString("html_url").ifEmpty { RELEASES }
+            val pageUrl = o.optString("html_url").ifEmpty { RELEASES }
             when {
                 tag.isEmpty() -> Result.Failed
-                isNewer(tag, currentVersion) -> Result.Available(tag, url)
+                isNewer(tag, currentVersion) -> Result.Available(tag, apkAssetUrl(o) ?: pageUrl)
                 else -> Result.UpToDate
             }
         } catch (e: Exception) {
             Result.Failed
         }
+    }
+
+    /** Picks the release's .apk asset matching this device's ABI (e.g. arm64-v8a), if any. */
+    private fun apkAssetUrl(release: JSONObject): String? {
+        val assets = release.optJSONArray("assets") ?: return null
+        val apks = (0 until assets.length()).mapNotNull { i ->
+            val a = assets.optJSONObject(i) ?: return@mapNotNull null
+            val name = a.optString("name")
+            val url = a.optString("browser_download_url")
+            if (name.endsWith(".apk") && url.isNotEmpty()) name to url else null
+        }
+        if (apks.isEmpty()) return null
+        android.os.Build.SUPPORTED_ABIS.forEach { abi ->
+            apks.firstOrNull { it.first.contains(abi) }?.let { return it.second }
+        }
+        return apks.first().second
     }
 
     private fun isNewer(remote: String, local: String): Boolean {
