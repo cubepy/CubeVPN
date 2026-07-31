@@ -90,7 +90,13 @@ Response 200:
 ```json
 {
   "ok": true,
-  "user": { "id": "123", "identifier": "+989123456789", "display_name": "Reza" },
+  "user": {
+    "id": "123",
+    "identifier": "+989123456789",
+    "display_name": "Reza",
+    "invite_code": "a1b2c3d4",
+    "referral_count": 3
+  },
   "services": [
     {
       "id": "svc_1",
@@ -120,6 +126,16 @@ On login, and periodically after, the app calls this endpoint, then adds
 user-pasted subscription link (fetch → parse configs → show under that
 service's server list, with the quota bar from the `subscription-userinfo`
 header).
+
+`user.invite_code` is a per-account referral code shown on the app's
+"Invite friends" screen (share/copy button); `user.referral_count` is how
+many people have signed up using it. Generate `invite_code` lazily on first
+request and persist it — it must stay stable for a given account.
+
+The app also uses each service's `total_bytes`/`used_bytes`/`expire` (or the
+`subscription-userinfo` header, whichever is present) to show a local
+"data running low" / "expiring soon" notification — no extra endpoint is
+needed for this, it's computed on-device from the same response.
 
 ### 401 handling
 

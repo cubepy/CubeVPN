@@ -6,7 +6,13 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-data class AuthUser(val id: String, val identifier: String, val displayName: String)
+data class AuthUser(
+    val id: String,
+    val identifier: String,
+    val displayName: String,
+    val inviteCode: String = "",
+    val referralCount: Int = 0
+)
 
 data class AccountService(
     val id: String,
@@ -72,7 +78,9 @@ object AuthApi {
             val user = AuthUser(
                 id = u?.optString("id") ?: "",
                 identifier = u?.optString("identifier") ?: "",
-                displayName = u?.optString("display_name") ?: ""
+                displayName = u?.optString("display_name") ?: "",
+                inviteCode = u?.optString("invite_code") ?: "",
+                referralCount = u?.optInt("referral_count") ?: 0
             )
             val services = mutableListOf<AccountService>()
             val arr = res.optJSONArray("services")

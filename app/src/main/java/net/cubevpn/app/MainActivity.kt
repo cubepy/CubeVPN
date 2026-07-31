@@ -124,6 +124,7 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
+import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.Lock
@@ -963,12 +964,19 @@ private fun CubeVpnApp(
     var accountServices by remember { mutableStateOf<List<AccountService>>(emptyList()) }
     var accountServicesLoading by remember { mutableStateOf(false) }
     var accountServicesError by remember { mutableStateOf<String?>(null) }
+    var accountUser by remember { mutableStateOf<AuthUser?>(null) }
+    val accountContext = LocalContext.current
     fun refreshAccountServices() {
         val token = store.authToken.value ?: return
         accountServicesLoading = true
         scope.launch {
             when (val res = AuthApi.fetchAccount(token)) {
-                is AuthResult.AccountOk -> { accountServices = res.services; accountServicesError = null }
+                is AuthResult.AccountOk -> {
+                    accountServices = res.services
+                    accountServicesError = null
+                    accountUser = res.user
+                    ServiceAlerts.checkAndNotify(accountContext, store, res.services)
+                }
                 is AuthResult.Error -> accountServicesError = res.message
                 else -> {}
             }
@@ -1013,6 +1021,7 @@ private fun CubeVpnApp(
     var themeDetail by remember { mutableStateOf(false) }
     var cleanIpDetail by remember { mutableStateOf(false) }
     var donationDetail by remember { mutableStateOf(false) }
+    var referralDetail by remember { mutableStateOf(false) }
     var exportConfigs by remember { mutableStateOf<List<ProxyConfig>?>(null) }
     val sortBySpeed by store.sortBySpeed.collectAsState()
     var sortExpanded by remember { mutableStateOf(false) }
@@ -1126,7 +1135,7 @@ private fun CubeVpnApp(
 
     val page = pagerState.currentPage
     val onSettingsTab = page == 1
-    val subScreenOpen = (page == 0 && (showPicker || showServices || showManual || exportConfigs != null)) || (onSettingsTab && (usageDetail || perAppDetail || logsDetail || stabilityDetail || aboutDetail || cleanIpDetail || donationDetail || themeDetail))
+    val subScreenOpen = (page == 0 && (showPicker || showServices || showManual || exportConfigs != null)) || (onSettingsTab && (usageDetail || perAppDetail || logsDetail || stabilityDetail || aboutDetail || cleanIpDetail || donationDetail || referralDetail || themeDetail))
 
     val screenKey = when {
         page == 0 && exportConfigs != null -> "export"
@@ -1142,6 +1151,7 @@ private fun CubeVpnApp(
         onSettingsTab && themeDetail -> "theme"
         onSettingsTab && cleanIpDetail -> "cleanip"
         onSettingsTab && donationDetail -> "donation"
+        onSettingsTab && referralDetail -> "referral"
         else -> "settings"
     }
 
@@ -1159,6 +1169,7 @@ private fun CubeVpnApp(
             themeDetail -> themeDetail = false
             cleanIpDetail -> cleanIpDetail = false
             donationDetail -> donationDetail = false
+            referralDetail -> referralDetail = false
             onSettingsTab -> scope.launch { pagerState.animateScrollToPage(0) }
         }
     }
@@ -1200,6 +1211,7 @@ private fun CubeVpnApp(
                                 "theme" -> t("theme_settings")
                                 "cleanip" -> t("scan_title")
                                 "donation" -> if (LocalLang.current == Lang.FA) "حمایت از ما" else "Support Us"
+                                "referral" -> t("invite_friends")
                                 else -> t("settings")
                             }
                         )
@@ -1219,6 +1231,7 @@ private fun CubeVpnApp(
                         "theme" -> BounceIconButton(onClick = { themeDetail = false }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                         "cleanip" -> BounceIconButton(onClick = { cleanIpDetail = false }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                         "donation" -> BounceIconButton(onClick = { donationDetail = false }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                        "referral" -> BounceIconButton(onClick = { referralDetail = false }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                     }
                 },
                 actions = {
@@ -1280,6 +1293,7 @@ private fun CubeVpnApp(
                         themeDetail = false
                         cleanIpDetail = false
                         donationDetail = false
+                        referralDetail = false
                         scope.launch { pagerState.animateScrollToPage(1) }
                     },
                     icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
@@ -1374,12 +1388,13 @@ private fun CubeVpnApp(
                     themeDetail -> "theme"
                     cleanIpDetail -> "cleanip"
                     donationDetail -> "donation"
+                    referralDetail -> "referral"
                     else -> "settings"
                 }
                 AnimatedContent(
                     targetState = setKey,
                     transitionSpec = {
-                        if (targetState == "usage" || targetState == "perapp" || targetState == "logs" || targetState == "stability" || targetState == "about" || targetState == "cleanip" || targetState == "donation") {
+                        if (targetState == "usage" || targetState == "perapp" || targetState == "logs" || targetState == "stability" || targetState == "about" || targetState == "cleanip" || targetState == "donation" || targetState == "referral") {
                             slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(250)) togetherWith
                                     slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(250))
                         } else {
@@ -1398,6 +1413,7 @@ private fun CubeVpnApp(
                         "theme" -> ThemeSettingsScreen(store = store)
                         "cleanip" -> CleanIpScreen()
                         "donation" -> DonationScreen()
+                        "referral" -> ReferralScreen(user = accountUser)
                         else -> SettingsScreen(
                             store = store,
                             scrollState = settingsScroll,
@@ -1408,7 +1424,8 @@ private fun CubeVpnApp(
                             onOpenAbout = { aboutDetail = true },
                             onOpenTheme = { themeDetail = true },
                             onOpenCleanIp = { cleanIpDetail = true },
-                            onOpenDonation = { donationDetail = true }
+                            onOpenDonation = { donationDetail = true },
+                            onOpenReferral = { referralDetail = true }
                         )
                     }
                 }
@@ -2645,6 +2662,7 @@ private fun SettingsScreen(
     onOpenCleanIp: () -> Unit,
     onOpenDonation: () -> Unit,
     onOpenTheme: () -> Unit,
+    onOpenReferral: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val t = stringsFn()
@@ -2705,6 +2723,23 @@ private fun SettingsScreen(
                     TextButton(onClick = { confirmLogout = false }) { Text(t("cancel")) }
                 }
             )
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .clickable { onOpenReferral() },
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+        ) {
+            Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(t("invite_friends"), style = MaterialTheme.typography.bodyLarge)
+                    Text(t("invite_friends_sub"), style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Icon(Icons.Filled.ChevronRight, contentDescription = null)
+            }
         }
 
         Text(t("data_usage"), style = MaterialTheme.typography.titleMedium)
@@ -3109,6 +3144,90 @@ private fun ThemeModeRow(
             Spacer(Modifier.width(12.dp))
             Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
             if (selected) Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+@Composable
+private fun ReferralScreen(user: AuthUser?, modifier: Modifier = Modifier) {
+    val t = stringsFn()
+    val lang = LocalLang.current
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
+
+    Column(
+        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            Icons.Filled.CardGiftcard,
+            contentDescription = null,
+            modifier = Modifier.padding(top = 8.dp).size(64.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            t("invite_friends_desc"),
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        if (user == null) {
+            CircularProgressIndicator(modifier = Modifier.padding(top = 24.dp))
+        } else {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+            ) {
+                Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(t("your_invite_code"), style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        user.inviteCode.ifBlank { "—" },
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedButton(onClick = {
+                            clipboard.setText(AnnotatedString(user.inviteCode))
+                            android.widget.Toast.makeText(context, t("copied"), android.widget.Toast.LENGTH_SHORT).show()
+                        }, enabled = user.inviteCode.isNotBlank()) {
+                            Icon(Icons.Filled.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(t("copy"))
+                        }
+                        Button(onClick = {
+                            val send = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, t("invite_share_text").format(user.inviteCode))
+                            }
+                            context.startActivity(Intent.createChooser(send, t("share")))
+                        }, enabled = user.inviteCode.isNotBlank()) {
+                            Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(t("share"))
+                        }
+                    }
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+            ) {
+                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(t("referral_count"), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    Text(
+                        localizeDigits("${user.referralCount}", lang),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
         }
     }
 }

@@ -83,6 +83,15 @@ try {
         $displayName = $identifier;
     }
 
+    // Same lazy-generation ServiceApiHandler/UserInfoHandler already does for
+    // the miniapp's own referral code — reuse it here instead of a second code.
+    $inviteCode = (string)($user['codeInvitation'] ?? '');
+    if ($inviteCode === '') {
+        $inviteCode = bin2hex(random_bytes(4));
+        update('user', 'codeInvitation', $inviteCode, 'id', $userId);
+    }
+    $referralCount = (int)($user['affiliatescount'] ?? 0);
+
     $invoices = FaoximaDb::fetchAll(
         "SELECT * FROM invoice
           WHERE id_user = :uid
@@ -125,6 +134,8 @@ try {
             'id' => (string)$userId,
             'identifier' => $identifier,
             'display_name' => $displayName,
+            'invite_code' => $inviteCode,
+            'referral_count' => $referralCount,
         ],
         'services' => $services,
     ]);
