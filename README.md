@@ -8,6 +8,11 @@ A lightweight Android VPN client built on [Xray-core](https://github.com/XTLS/Xr
 
 - **Sign-in via Telegram** — enter your phone number or Telegram ID and verify with a one-time code sent by [@cubevvpn_bot](https://t.me/cubevvpn_bot); no password to remember.
 - **Purchased services** — after sign-in the app pulls your active plan(s) automatically, each with its own data quota, expiry, and server list.
+- **Low-data / expiry alerts** — get a local notification when a service is almost out of data or about to expire.
+- **Invite friends** — share your personal invite code from Settings and track how many people signed up with it.
+- **QR code scanning** — add a config by pointing the camera at its QR code, same result as pasting the link.
+- **In-app updates** — checks for a new version on launch and lets you download the matching APK directly, no browser detour.
+- **Language picker on first launch** — choose Persian or English up front; switch anytime later from Settings.
 - **Multiple protocols** — VLESS, VMess, Trojan, and Shadowsocks.
 - **Modern transports** — REALITY, TLS, WebSocket, gRPC, HTTPUpgrade, XHTTP, and plain TCP.
 - **Cloudflare WARP** — register and add a WARP configuration in one tap.

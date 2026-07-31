@@ -270,7 +270,18 @@ object Strings {
         "scan_qr_hint" to "Point the camera at a config QR code",
         "camera_permission_needed" to "Camera permission is needed to scan a QR code",
         "qr_added" to "Added from QR code",
-        "qr_parse_failed" to "That QR code isn't a config link"
+        "qr_parse_failed" to "That QR code isn't a config link",
+        "copy" to "Copy",
+        "invite_friends" to "Invite friends",
+        "invite_friends_sub" to "Share your code, earn rewards",
+        "invite_friends_desc" to "Share your invite code with friends. When they sign up with it, you both benefit.",
+        "your_invite_code" to "Your invite code",
+        "invite_share_text" to "Join CubeVPN with my invite code: %s — get it from @Cubevvpn_bot",
+        "referral_count" to "Friends invited",
+        "data_low_title" to "Data running low",
+        "data_low_body" to "%s is almost out of data — top up soon to avoid interruption.",
+        "expiring_soon_title" to "Service expiring soon",
+        "expiring_soon_body" to "%s expires in %s day(s) — renew to stay connected."
     )
 
     private val fa = mapOf(
@@ -530,7 +541,18 @@ object Strings {
         "scan_qr_hint" to "دوربین را روی کد QR کانفیگ بگیرید",
         "camera_permission_needed" to "برای اسکن کد QR به دسترسی دوربین نیاز است",
         "qr_added" to "از روی کد QR اضافه شد",
-        "qr_parse_failed" to "این کد QR یک لینک کانفیگ نیست"
+        "qr_parse_failed" to "این کد QR یک لینک کانفیگ نیست",
+        "copy" to "کپی",
+        "invite_friends" to "دعوت از دوستان",
+        "invite_friends_sub" to "کدت رو به اشتراک بذار، جایزه بگیر",
+        "invite_friends_desc" to "کد دعوت خودت رو با دوستانت به اشتراک بذار. وقتی با اون ثبت‌نام کنن، هر دوتون سود می‌کنید.",
+        "your_invite_code" to "کد دعوت شما",
+        "invite_share_text" to "با کد دعوت من به کیوب‌وی‌پی‌ان بپیوند: %s — از طریق @Cubevvpn_bot دریافتش کن",
+        "referral_count" to "تعداد دعوت‌شده‌ها",
+        "data_low_title" to "حجم رو به اتمام است",
+        "data_low_body" to "حجم سرویس %s رو به اتمامه — برای جلوگیری از قطعی، زودتر شارژش کن.",
+        "expiring_soon_title" to "سرویس به‌زودی منقضی می‌شود",
+        "expiring_soon_body" to "سرویس %s تا %s روز دیگر منقضی می‌شود — برای ادامهٔ اتصال تمدیدش کن."
     )
 
     fun get(lang: Lang, key: String): String =
