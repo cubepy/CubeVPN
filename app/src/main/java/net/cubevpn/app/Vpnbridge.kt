@@ -42,15 +42,20 @@ object VpnBridge {
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(ctx: Context, intent: Intent) {
                 when (intent.getStringExtra(EX_STATE)) {
-                    S_CONNECTED -> VpnState.setConnected()
+                    S_CONNECTED -> {
+                        VpnState.setConnected()
+                        CubeVpnWidget.refreshAll(ctx)
+                    }
                     S_ERROR -> {
                         VpnState.setError(intent.getStringExtra(EX_ERROR) ?: "Connection failed")
                         _counters.value = VpnCounters()
+                        CubeVpnWidget.refreshAll(ctx)
                     }
                     S_DISCONNECTED -> {
                         VpnState.setDisconnected()
                         _counters.value = VpnCounters()
                         UsageStore.flush()
+                        CubeVpnWidget.refreshAll(ctx)
                     }
                     S_COUNTERS -> {
                         val tup = intent.getLongExtra(EX_TOTAL_UP, 0L)
