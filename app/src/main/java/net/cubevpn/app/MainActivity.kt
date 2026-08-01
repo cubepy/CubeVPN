@@ -479,6 +479,13 @@ private fun accentPaletteOf(theme: AccentTheme): AccentPalette = when (theme) {
 
 internal val LocalAccent = compositionLocalOf { VioletPalette as AccentPalette }
 
+/**
+ * The three brand hues together (violet + aurora cyan + ember amber), independent of
+ * whichever single accent is active — used to give the home screen's ambient particle
+ * field a vivid, multi-color look rather than one flat tint.
+ */
+internal val BrandTriColor: List<Color> = listOf(VioletPalette.glow, AuroraPalette.glow, EmberPalette.glow)
+
 internal val LocalLang = compositionLocalOf { Lang.EN }
 
 @Composable
@@ -1111,6 +1118,7 @@ private fun CubeVpnApp(
     onSwitch: (ProxyConfig) -> Unit
 ) {
     val t = stringsFn()
+    val lang = LocalLang.current
     val scope = rememberCoroutineScope()
     val themeMode by store.themeMode.collectAsState()
     val effectiveDark = when (themeMode) {
@@ -1151,7 +1159,6 @@ private fun CubeVpnApp(
     LaunchedEffect(Unit) { refreshAccountServices() }
 
     val updateCtx = LocalContext.current
-    val updateUri = LocalUriHandler.current
     var updateAvailable by remember { mutableStateOf<UpdateChecker.Result.Available?>(null) }
     LaunchedEffect(Unit) {
         if (System.currentTimeMillis() - store.lastUpdateCheck() >= 24L * 60 * 60 * 1000L) {
@@ -1160,7 +1167,10 @@ private fun CubeVpnApp(
             }.getOrNull() ?: ""
             val r = UpdateChecker.check(ver)
             store.markUpdateChecked()
-            if (r is UpdateChecker.Result.Available) updateAvailable = r
+            if (r is UpdateChecker.Result.Available) {
+                updateAvailable = r
+                UpdateNotifier.notifyIfNeeded(updateCtx, lang, r.version)
+            }
         }
     }
     updateAvailable?.let { upd ->
@@ -1169,7 +1179,8 @@ private fun CubeVpnApp(
             title = { Text(t("update_available").format(upd.version)) },
             confirmButton = {
                 TextButton(onClick = {
-                    runCatching { updateUri.openUri(upd.downloadUrl) }
+                    UpdateInstaller.downloadAndInstall(updateCtx, upd.downloadUrl, upd.version)
+                    android.widget.Toast.makeText(updateCtx, t("update_downloading"), android.widget.Toast.LENGTH_SHORT).show()
                     updateAvailable = null
                 }) { Text(t("update_now")) }
             },
@@ -1640,6 +1651,25 @@ private fun ConnectionScreen(
     }
 
     val selectedConfig = configs.find { it.id == selectedId }
+
+    // Auto-reconnect: redial the last server after an unexpected drop (Connection.ERROR),
+    // not a user-initiated disconnect (Connection.DISCONNECTED never triggers this). Bounded
+    // retries with backoff so a persistently broken server doesn't loop forever.
+    val autoReconnect by store.autoReconnect.collectAsState()
+    var reconnectAttempts by remember { mutableStateOf(0) }
+    LaunchedEffect(conn) {
+        when (conn) {
+            Connection.CONNECTED -> reconnectAttempts = 0
+            Connection.ERROR -> {
+                if (autoReconnect && selectedConfig != null && reconnectAttempts < 5) {
+                    reconnectAttempts++
+                    delay(3000L * reconnectAttempts.coerceAtMost(3))
+                    if (autoReconnect && VpnState.state.value == Connection.ERROR) onConnect(selectedConfig)
+                }
+            }
+            else -> {}
+        }
+    }
     val connected = conn == Connection.CONNECTED || conn == Connection.CONNECTING
 
     val hazeState = remember { HazeState() }
@@ -1838,6 +1868,21 @@ private fun ServicesScreen(
     val addedUrls = remember(subscriptions) { subscriptions.map { it.url }.toSet() }
     val adding = remember { mutableStateMapOf<String, Boolean>() }
 
+    // The account API's invoice-derived numbers don't carry an expiry (see accountme.php);
+    // fetch each service's own subscription-userinfo header in the background for the real
+    // remaining-days figure, falling back to the coarser invoice numbers until it lands.
+    val liveInfo = remember { mutableStateMapOf<String, SubUserInfo?>() }
+    LaunchedEffect(services) {
+        services.forEach { svc ->
+            if (svc.subscriptionUrl.isBlank() || liveInfo.containsKey(svc.id)) return@forEach
+            liveInfo[svc.id] = null
+            launch {
+                val info = runCatching { SubscriptionFetcher.fetchUserInfo(svc.subscriptionUrl) }.getOrNull()
+                if (info != null) liveInfo[svc.id] = info
+            }
+        }
+    }
+
     fun addToServers(svc: AccountService) {
         if (svc.subscriptionUrl.isBlank() || adding[svc.id] == true) return
         adding[svc.id] = true
@@ -1900,15 +1945,21 @@ private fun ServicesScreen(
     ) {
         items(services, key = { it.id.ifBlank { it.subscriptionUrl } }) { svc ->
             val added = svc.subscriptionUrl in addedUrls
+            val info = liveInfo[svc.id]
+            val effective = svc.copy(
+                totalBytes = info?.total?.takeIf { it > 0 } ?: svc.totalBytes,
+                usedBytes = if ((info?.total ?: 0) > 0) info!!.used else svc.usedBytes,
+                expire = info?.expire?.takeIf { it > 0 } ?: svc.expire
+            )
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
             ) {
                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(svc.name, style = MaterialTheme.typography.titleMedium)
-                    if (svc.totalBytes > 0) UsageBar(used = svc.usedBytes, total = svc.totalBytes)
-                    accountServiceUsageText(svc, lang)?.let {
+                    Text(svc.name.ifBlank { t("my_services") }, style = MaterialTheme.typography.titleMedium)
+                    if (effective.totalBytes > 0) UsageBar(used = effective.usedBytes, total = effective.totalBytes)
+                    accountServiceUsageText(effective, lang)?.let {
                         Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (svc.subscriptionUrl.isNotBlank()) {
@@ -2841,6 +2892,7 @@ private fun SettingsScreen(
     val sniffing by store.sniffing.collectAsState()
     val sniffTypes by store.sniffTypes.collectAsState()
     val killSwitch by store.killSwitch.collectAsState()
+    val autoReconnect by store.autoReconnect.collectAsState()
     val mux by store.mux.collectAsState()
     val muxConcurrency by store.muxConcurrency.collectAsState()
     val globeStyle by store.globeStyle.collectAsState()
@@ -3056,6 +3108,13 @@ private fun SettingsScreen(
                 }
             }
         }
+
+        SettingRow(
+            title = t("auto_reconnect_title"),
+            subtitle = t("auto_reconnect_sub"),
+            checked = autoReconnect,
+            onCheckedChange = { store.setAutoReconnect(it) }
+        )
 
         val perAppMode by store.perAppMode.collectAsState()
         val perAppList by store.perAppList.collectAsState()
@@ -3566,6 +3625,7 @@ private fun AboutScreen(modifier: Modifier = Modifier) {
     var checking by remember { mutableStateOf(false) }
     var updateStatus by remember { mutableStateOf<String?>(null) }
     var updateUrl by remember { mutableStateOf<String?>(null) }
+    var updateVersion by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -3590,8 +3650,12 @@ private fun AboutScreen(modifier: Modifier = Modifier) {
                 .clip(RoundedCornerShape(20.dp))
                 .clickable(enabled = !checking) {
                     val url = updateUrl
-                    if (url != null) {
-                        runCatching { uriHandler.openUri(url) }
+                    val version = updateVersion
+                    if (url != null && version != null) {
+                        UpdateInstaller.downloadAndInstall(context, url, version)
+                        updateStatus = t("update_downloading")
+                        updateUrl = null
+                        updateVersion = null
                     } else {
                         checking = true
                         updateStatus = t("checking_updates")
@@ -3600,6 +3664,7 @@ private fun AboutScreen(modifier: Modifier = Modifier) {
                                 is UpdateChecker.Result.Available -> {
                                     updateStatus = t("update_available").format(r.version)
                                     updateUrl = r.downloadUrl
+                                    updateVersion = r.version
                                 }
                                 UpdateChecker.Result.UpToDate -> updateStatus = t("up_to_date")
                                 UpdateChecker.Result.Failed -> updateStatus = t("update_failed")

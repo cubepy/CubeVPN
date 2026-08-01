@@ -34,6 +34,14 @@ object SubscriptionFetcher {
     suspend fun fetch(url: String, source: ConfigSource = ConfigSource.PERSONAL): List<ProxyConfig> =
         fetchFull(url, source).configs
 
+    /**
+     * Just the panel's own "subscription-userinfo" header (data used/total, expire) — the
+     * accurate source for a service's remaining days, unlike the account API's invoice-derived
+     * numbers which don't carry an expiry at all. Still does a full GET (panels only send this
+     * header on the subscription response), so call it sparingly.
+     */
+    suspend fun fetchUserInfo(url: String): SubUserInfo? = fetchFull(url).userInfo
+
     suspend fun fetchFull(url: String, source: ConfigSource = ConfigSource.PERSONAL): FetchResult =
         withContext(Dispatchers.IO) {
             val conn = openFollowingRedirects(url)

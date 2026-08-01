@@ -117,6 +117,13 @@ class ConfigStore private constructor(context: Context) {
         prefs.edit().putBoolean(KEY_KILL_SWITCH, enabled).apply()
     }
 
+    private val _autoReconnect = MutableStateFlow(prefs.getBoolean(KEY_AUTO_RECONNECT, false))
+    val autoReconnect: StateFlow<Boolean> = _autoReconnect.asStateFlow()
+    fun setAutoReconnect(enabled: Boolean) {
+        _autoReconnect.value = enabled
+        prefs.edit().putBoolean(KEY_AUTO_RECONNECT, enabled).apply()
+    }
+
     private val _mux = MutableStateFlow(prefs.getBoolean(KEY_MUX, false))
     val mux: StateFlow<Boolean> = _mux.asStateFlow()
     fun setMux(enabled: Boolean) {
@@ -447,6 +454,7 @@ class ConfigStore private constructor(context: Context) {
         private const val KEY_SPLIT = "split_routing_enabled"
         private const val KEY_SNIFFING = "sniffing_enabled"
         private const val KEY_KILL_SWITCH = "kill_switch_enabled"
+        private const val KEY_AUTO_RECONNECT = "auto_reconnect_enabled"
         private const val KEY_MUX = "mux_enabled"
         private const val KEY_MUX_CONCURRENCY = "mux_concurrency"
         private const val KEY_GLOBE_STYLE = "globe_style"

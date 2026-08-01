@@ -17,6 +17,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import kotlinx.coroutines.isActive
 import kotlin.math.PI
 import kotlin.math.cos
@@ -31,15 +32,20 @@ private const val FIELD_ALPHA = 0.35f
 @Composable
 fun ParticleField(modifier: Modifier = Modifier) {
     val conn by VpnState.state.collectAsState()
+    // While idle, particles cycle through the full brand palette (violet + aurora + ember)
+    // for a livelier, multi-color field; connecting/connected switch to a single status color
+    // so the state stays unambiguous.
+    val statusTint = when (conn) {
+        Connection.CONNECTED -> Color(0xFF4BF0A4)
+        Connection.CONNECTING -> Color(0xFFFFA94D)
+        else -> null
+    }
     val tint by animateColorAsState(
-        targetValue = when (conn) {
-            Connection.CONNECTED -> Color(0xFF4BF0A4)
-            Connection.CONNECTING -> Color(0xFFFFA94D)
-            else -> Color(0xFF5B83D6)
-        },
+        targetValue = statusTint ?: BrandTriColor[0],
         animationSpec = tween(500),
         label = "particleTint"
     )
+    val multiColor = statusTint == null
     val density = LocalDensity.current.density
 
     val xs = remember { FloatArray(PARTICLE_COUNT) }
@@ -110,6 +116,7 @@ fun ParticleField(modifier: Modifier = Modifier) {
         val linkDist = 96.dp.toPx()
         val linkDist2 = linkDist * linkDist
         val sw = 1.dp.toPx()
+        fun colorOf(i: Int): Color = if (multiColor) BrandTriColor[i % BrandTriColor.size] else tint
 
         for (i in 0 until PARTICLE_COUNT) {
             for (j in i + 1 until PARTICLE_COUNT) {
@@ -119,8 +126,9 @@ fun ParticleField(modifier: Modifier = Modifier) {
                 if (d2 > linkDist2) continue
                 val d = sqrt(d2)
                 val a = (1f - d / linkDist) * 0.30f * FIELD_ALPHA
+                val lineColor = if (multiColor) lerp(colorOf(i), colorOf(j), 0.5f) else tint
                 drawLine(
-                    color = tint.copy(alpha = a),
+                    color = lineColor.copy(alpha = a),
                     start = Offset(xs[i], ys[i]),
                     end = Offset(xs[j], ys[j]),
                     strokeWidth = sw
@@ -134,8 +142,9 @@ fun ParticleField(modifier: Modifier = Modifier) {
             val glowAlpha = (38f / 255f) * mapped * FIELD_ALPHA
             val coreAlpha = ((70f + 150f * mapped) / 255f) * FIELD_ALPHA
             val c = Offset(xs[i], ys[i])
-            drawCircle(color = tint.copy(alpha = glowAlpha), radius = rs[i] * 3.2f, center = c)
-            drawCircle(color = tint.copy(alpha = coreAlpha), radius = rs[i], center = c)
+            val pc = colorOf(i)
+            drawCircle(color = pc.copy(alpha = glowAlpha), radius = rs[i] * 3.2f, center = c)
+            drawCircle(color = pc.copy(alpha = coreAlpha), radius = rs[i], center = c)
         }
     }
 }

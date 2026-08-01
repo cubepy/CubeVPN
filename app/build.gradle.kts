@@ -31,6 +31,8 @@ val secrets = Properties().apply {
     if (f.exists()) load(FileInputStream(f))
 }
 
+val appVersionName = "1.2.0"
+
 android {
     namespace = "net.cubevpn.app"
     compileSdk {
@@ -44,7 +46,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 4
-        versionName = "1.2.0"
+        versionName = appVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "DEFAULT_SUB_URL", "\"${secrets.getProperty("DEFAULT_SUB_URL", "")}\"")
         buildConfigField("String", "DONATION_CARD_NUMBER", bcString(localProp("DONATION_CARD_NUMBER")))
@@ -105,6 +107,23 @@ android {
     lint {
         checkReleaseBuilds = false
         abortOnError = false
+    }
+}
+
+// Name built APKs "CubeVPN-v<version>-<abi|universal>-<buildType>.apk" instead of AGP's
+// default "app-arm64-v8a-release.apk", so a GitHub release asset (and what a browser
+// offers to save it as) reads like a real CubeVPN build, not a generic filename.
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            if (output is com.android.build.api.variant.impl.VariantOutputImpl) {
+                val abi = output.filters
+                    .find { it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI }
+                    ?.identifier
+                    ?: "universal"
+                output.outputFileName.set("CubeVPN-v$appVersionName-$abi-${variant.buildType}.apk")
+            }
+        }
     }
 }
 
