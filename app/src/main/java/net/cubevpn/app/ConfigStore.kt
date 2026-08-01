@@ -426,6 +426,13 @@ class ConfigStore private constructor(context: Context) {
         prefs.edit().putLong(KEY_LAST_UPDATE_CHECK, System.currentTimeMillis()).apply()
     }
 
+    /** versionCode of the last install the user has already seen a "what's new" dialog for. */
+    fun lastSeenVersionCode(): Int = prefs.getInt(KEY_LAST_SEEN_VERSION, 0)
+
+    fun markVersionSeen(versionCode: Int) {
+        prefs.edit().putInt(KEY_LAST_SEEN_VERSION, versionCode).apply()
+    }
+
     fun saveLastTest(json: String, timeMillis: Long) {
         prefs.edit().putString(KEY_LAST_TEST, json).putLong(KEY_LAST_TEST_TIME, timeMillis).apply()
     }
@@ -475,6 +482,7 @@ class ConfigStore private constructor(context: Context) {
         private const val KEY_PERAPP_LIST = "perapp_list"
         private const val KEY_EXPANDED_SUBS = "expanded_subs"
         private const val KEY_LAST_UPDATE_CHECK = "last_update_check"
+        private const val KEY_LAST_SEEN_VERSION = "last_seen_version_code"
         private const val KEY_LAST_TEST = "last_test_json"
         private const val KEY_LAST_TEST_TIME = "last_test_time"
     }

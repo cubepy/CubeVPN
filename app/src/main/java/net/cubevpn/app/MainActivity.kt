@@ -538,10 +538,23 @@ private fun CubeVpnMark(modifier: Modifier = Modifier, ringed: Boolean = false) 
     Box(modifier, contentAlignment = Alignment.Center) {
         if (ringed) {
             Canvas(Modifier.matchParentSize()) {
+                val r = size.minDimension / 2f
+                // Soft glow instead of a hard-edged outline circle.
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colorStops = arrayOf(
+                            0.55f to accent.glow.copy(alpha = 0f),
+                            0.82f to accent.glow.copy(alpha = 0.22f),
+                            1f to accent.glow.copy(alpha = 0f)
+                        ),
+                        radius = r
+                    ),
+                    radius = r
+                )
                 drawCircle(
                     color = accent.glow.copy(alpha = 0.5f),
-                    radius = size.minDimension / 2f,
-                    style = Stroke(width = size.minDimension * 0.03f)
+                    radius = r * 0.9f,
+                    style = Stroke(width = size.minDimension * 0.012f)
                 )
             }
         }
@@ -616,9 +629,17 @@ private fun WelcomeScreen(onDone: () -> Unit) {
         label = "taglineAlpha"
     )
     val taglineShift by animateFloatAsState(
-        targetValue = if (showTagline) 0f else 30f,
+        targetValue = if (showTagline) 0f else 16f,
         animationSpec = tween(700),
         label = "taglineShift"
+    )
+
+    // Gentle continuous breathing pulse once the logo has settled in, so the splash isn't static.
+    val pulse = rememberInfiniteTransition(label = "splashPulse")
+    val pulseScale by pulse.animateFloat(
+        initialValue = 1f, targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Reverse),
+        label = "pulseScale"
     )
 
     Box(
@@ -637,10 +658,13 @@ private fun WelcomeScreen(onDone: () -> Unit) {
                     .size(200.dp)
                     .graphicsLayer {
                         alpha = logoAlpha
-                        scaleX = logoScale
-                        scaleY = logoScale
+                        val s = logoScale * (if (showLogo) pulseScale else 1f)
+                        scaleX = s
+                        scaleY = s
                     }
             )
+
+            Spacer(Modifier.height(28.dp))
 
             Text(
                 text = t("welcome_tagline"),
@@ -654,7 +678,6 @@ private fun WelcomeScreen(onDone: () -> Unit) {
                 overflow = TextOverflow.Visible,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .offset(y = (-40).dp)
                     .padding(horizontal = 24.dp)
                     .graphicsLayer {
                         alpha = taglineAlpha
@@ -1226,6 +1249,47 @@ private fun CubeVpnApp(
             }
         )
     }
+
+    var whatsNew by remember { mutableStateOf<List<ChangelogEntry>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        val pkgInfo = runCatching {
+            updateCtx.packageManager.getPackageInfo(updateCtx.packageName, 0)
+        }.getOrNull() ?: return@LaunchedEffect
+        val currentCode = androidx.core.content.pm.PackageInfoCompat.getLongVersionCode(pkgInfo).toInt()
+        val lastSeen = store.lastSeenVersionCode()
+        if (currentCode > lastSeen) {
+            // firstInstallTime == lastUpdateTime means this install has never been updated —
+            // a brand-new user with nothing to announce, as opposed to an existing user
+            // updating into a version with new entries (including the very first version
+            // this feature shipped in, where lastSeen is 0 for everyone already on the app).
+            val isFreshInstall = pkgInfo.firstInstallTime == pkgInfo.lastUpdateTime
+            if (!isFreshInstall) {
+                val pending = WhatsNew.pending(lastSeen, currentCode)
+                if (pending.isNotEmpty()) whatsNew = pending
+            }
+            store.markVersionSeen(currentCode)
+        }
+    }
+    if (whatsNew.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = { whatsNew = emptyList() },
+            title = { Text(t("whats_new_title")) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    whatsNew.flatMap { if (lang == Lang.FA) it.fa else it.en }.forEach { line ->
+                        Row {
+                            Text("•  ", style = MaterialTheme.typography.bodyMedium)
+                            Text(line, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { whatsNew = emptyList() }) { Text(t("got_it")) }
+            }
+        )
+    }
+
     var usageDetail by remember { mutableStateOf(false) }
     var perAppDetail by remember { mutableStateOf(false) }
     var logsDetail by remember { mutableStateOf(false) }
@@ -1925,8 +1989,13 @@ private fun ServicesScreen(
         if (svc.subscriptionUrl.isBlank() || adding[svc.id] == true) return
         adding[svc.id] = true
         scope.launch {
-            runCatching {
-                val fetched = SubscriptionFetcher.fetchFull(svc.subscriptionUrl)
+            val result = runCatching { SubscriptionFetcher.fetchFull(svc.subscriptionUrl) }
+            val fetched = result.getOrNull()
+            if (fetched == null || fetched.configs.isEmpty()) {
+                // Don't overwrite an already-added subscription's servers (and whatever's
+                // selected from them) with an empty list on a transient fetch failure.
+                android.widget.Toast.makeText(context, t("fetch_failed"), android.widget.Toast.LENGTH_SHORT).show()
+            } else {
                 val info = fetched.userInfo
                 store.upsertSubscription(
                     Subscription(
@@ -2461,17 +2530,25 @@ private fun ConfigPickerScreen(
                             scope.launch {
                                 try {
                                     val result = SubscriptionFetcher.fetchFull(sub.url)
-                                    val info = result.userInfo
-                                    store.upsertSubscription(
-                                        sub.copy(
-                                            used = info?.used ?: sub.used,
-                                            total = info?.total ?: sub.total,
-                                            expire = info?.expire ?: sub.expire,
-                                            lastUpdated = System.currentTimeMillis()
-                                        ),
-                                        result.configs
-                                    )
-                                    subStatus = n("${sub.name}: ${result.configs.size}")
+                                    if (result.configs.isEmpty()) {
+                                        // A blank/failed response with no thrown exception (e.g. a
+                                        // transient network hiccup returning an empty body) must not
+                                        // wipe the subscription's existing servers — and with them,
+                                        // whatever was selected/connected.
+                                        subStatus = t("fetch_failed")
+                                    } else {
+                                        val info = result.userInfo
+                                        store.upsertSubscription(
+                                            sub.copy(
+                                                used = info?.used ?: sub.used,
+                                                total = info?.total ?: sub.total,
+                                                expire = info?.expire ?: sub.expire,
+                                                lastUpdated = System.currentTimeMillis()
+                                            ),
+                                            result.configs
+                                        )
+                                        subStatus = n("${sub.name}: ${result.configs.size}")
+                                    }
                                 } catch (e: Exception) {
                                     subStatus = "${t("fetch_failed")}: ${e.message ?: ""}"
                                 }
