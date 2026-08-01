@@ -96,7 +96,9 @@ android {
             isEnable = true
             reset()
             include("arm64-v8a", "armeabi-v7a")
-            isUniversalApk = false
+            // Also build a single "universal" APK bundling both ABIs, for devices/stores
+            // that need one file instead of picking a per-ABI split.
+            isUniversalApk = true
         }
     }
 

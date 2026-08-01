@@ -11,12 +11,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,6 +43,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,6 +54,7 @@ private val DONATION_CARD_NUMBER: String =
     BuildConfig.DONATION_CARD_NUMBER.ifBlank { "0000 0000 0000 0000" }
 private val DONATION_CARD_HOLDER: String =
     BuildConfig.DONATION_CARD_HOLDER.ifBlank { "—" }
+private const val TON_WALLET_ADDRESS = "UQBP3uD9kE9UgTWrH2BiVDmurQZOvVl8awinVzqnBmenUQUq"
 
 @Composable
 fun DonationScreen(modifier: Modifier = Modifier) {
@@ -73,11 +84,7 @@ fun DonationScreen(modifier: Modifier = Modifier) {
             Modifier.fillMaxWidth()
                 .aspectRatio(1.586f)
                 .clip(RoundedCornerShape(22.dp))
-                .background(
-                    Brush.linearGradient(
-                        listOf(Color(0xFF0D0619), Color(0xFF6D28D9), Color(0xFFC026D3))
-                    )
-                )
+                .background(Brush.linearGradient(LocalAccent.current.gradient))
                 .clickable {
                     clipboard.setText(AnnotatedString(DONATION_CARD_NUMBER.replace(" ", "")))
                     copied = true
@@ -169,5 +176,78 @@ fun DonationScreen(modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+
+        var tonCopied by remember { mutableStateOf(false) }
+        LaunchedEffect(tonCopied) {
+            if (tonCopied) {
+                delay(2200)
+                tonCopied = false
+            }
+        }
+        Card(
+            modifier = Modifier.fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .clickable {
+                    clipboard.setText(AnnotatedString(TON_WALLET_ADDRESS))
+                    tonCopied = true
+                },
+            shape = RoundedCornerShape(20.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+        ) {
+            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(38.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Brush.linearGradient(LocalAccent.current.gradient)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Filled.AccountBalanceWallet,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            if (lang == Lang.FA) "کیف‌پول تون (Gram)" else "TON (Gram) Wallet",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            if (lang == Lang.FA) "برای حمایت با تون‌کوین" else "Support with Toncoin",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (tonCopied) {
+                        Icon(
+                            Icons.Filled.Check,
+                            contentDescription = null,
+                            tint = Color(0xFF4BF0A4),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    } else {
+                        Icon(
+                            Icons.Filled.ContentCopy,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    Text(
+                        TON_WALLET_ADDRESS,
+                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
     }
 }
