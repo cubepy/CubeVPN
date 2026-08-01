@@ -488,6 +488,43 @@ internal val BrandTriColor: List<Color> = listOf(VioletPalette.glow, AuroraPalet
 
 internal val LocalLang = compositionLocalOf { Lang.EN }
 
+/**
+ * Two soft, always-on color glows behind the home screen — the active accent in one corner
+ * and a genuinely different brand hue in the other — so the page reads as more than a single
+ * flat color even before the particle field's subtler per-particle tinting kicks in.
+ */
+@Composable
+private fun AmbientBackdrop(modifier: Modifier = Modifier) {
+    val accent = LocalAccent.current
+    val secondHue = when (accent.theme) {
+        AccentTheme.VIOLET -> AuroraPalette.glow
+        AccentTheme.AURORA -> EmberPalette.glow
+        AccentTheme.EMBER -> VioletPalette.glow
+    }
+    Box(modifier) {
+        Box(
+            Modifier
+                .size(360.dp)
+                .align(Alignment.TopEnd)
+                .offset(x = 110.dp, y = (-110).dp)
+                .background(
+                    Brush.radialGradient(listOf(accent.glow.copy(alpha = 0.30f), Color.Transparent)),
+                    shape = CircleShape
+                )
+        )
+        Box(
+            Modifier
+                .size(320.dp)
+                .align(Alignment.BottomStart)
+                .offset(x = (-100).dp, y = 100.dp)
+                .background(
+                    Brush.radialGradient(listOf(secondHue.copy(alpha = 0.26f), Color.Transparent)),
+                    shape = CircleShape
+                )
+        )
+    }
+}
+
 @Composable
 private fun stringsFn(): (String) -> String {
     val lang = LocalLang.current
@@ -1674,6 +1711,7 @@ private fun ConnectionScreen(
 
     val hazeState = remember { HazeState() }
     Box(modifier.fillMaxSize()) {
+        AmbientBackdrop(Modifier.fillMaxSize())
         ParticleField(Modifier.fillMaxSize().hazeSource(hazeState))
         CompositionLocalProvider(LocalHazeState provides hazeState) {
             Column(
@@ -1958,6 +1996,13 @@ private fun ServicesScreen(
             ) {
                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(svc.name.ifBlank { t("my_services") }, style = MaterialTheme.typography.titleMedium)
+                    if (svc.id.isNotBlank()) {
+                        Text(
+                            t("service_number").format(localizeDigits(svc.id, lang)),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     if (effective.totalBytes > 0) UsageBar(used = effective.usedBytes, total = effective.totalBytes)
                     accountServiceUsageText(effective, lang)?.let {
                         Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
