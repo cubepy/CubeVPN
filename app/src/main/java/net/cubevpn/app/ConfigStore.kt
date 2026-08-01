@@ -15,6 +15,7 @@ import java.util.concurrent.Executors
 
 enum class PerAppMode { OFF, ALLOWLIST, BLOCKLIST }
 enum class ThemeMode { SYSTEM, LIGHT, DARK, AMOLED }
+enum class AccentTheme { VIOLET, AURORA, EMBER }
 class ConfigStore private constructor(context: Context) {
 
     private val prefs = context.getSharedPreferences("gozarnet", Context.MODE_PRIVATE)
@@ -191,6 +192,18 @@ class ConfigStore private constructor(context: Context) {
     fun setThemeMode(mode: ThemeMode) {
         _themeMode.value = mode
         prefs.edit().putString(KEY_THEME, mode.name).apply()
+    }
+
+    private val _accentTheme = MutableStateFlow(loadAccentTheme())
+    val accentTheme: StateFlow<AccentTheme> = _accentTheme.asStateFlow()
+
+    private fun loadAccentTheme(): AccentTheme =
+        runCatching { AccentTheme.valueOf(prefs.getString(KEY_ACCENT, null) ?: "VIOLET") }
+            .getOrDefault(AccentTheme.VIOLET)
+
+    fun setAccentTheme(accent: AccentTheme) {
+        _accentTheme.value = accent
+        prefs.edit().putString(KEY_ACCENT, accent.name).apply()
     }
 
     private val _selectedId = MutableStateFlow(prefs.getString(KEY_SELECTED, null))
@@ -441,6 +454,7 @@ class ConfigStore private constructor(context: Context) {
         private const val KEY_AUTOSELECT = "auto_select_fastest"
         private const val KEY_SORT_SPEED = "sort_by_speed"
         private const val KEY_THEME = "theme_mode"
+        private const val KEY_ACCENT = "accent_theme"
         private const val KEY_DEFAULT_SEEDED = "default_sub_seeded"
         private const val DEFAULT_SUB_ID = "default-sub"
         private const val DEFAULT_SUB_NAME = "Default Sub"

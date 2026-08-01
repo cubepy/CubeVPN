@@ -125,6 +125,8 @@ import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.Lock
@@ -146,6 +148,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -251,68 +254,230 @@ import java.time.LocalDate
 import kotlin.math.round
 import kotlin.math.sqrt
 
-// CubeVPN brand: near-black surfaces with an indigo → violet → magenta gradient accent.
-private val SplashBackground = Color(0xFF0D0619)
-
-private val CubeLightColors = lightColorScheme(
-    primary = Color(0xFF7C3AED),
-    onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFEDE1FF),
-    onPrimaryContainer = Color(0xFF2C0A5C),
-    secondary = Color(0xFF6B5A82),
-    onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = Color(0xFFEFE6F7),
-    onSecondaryContainer = Color(0xFF241934),
-    background = Color(0xFFFAF7FC),
-    onBackground = Color(0xFF1B1425),
-    surface = Color(0xFFFFFFFF),
-    onSurface = Color(0xFF1B1425),
-    surfaceVariant = Color(0xFFEDE6F4),
-    onSurfaceVariant = Color(0xFF5C5069),
-    error = Color(0xFFB3261E),
-    onError = Color(0xFFFFFFFF),
-    outline = Color(0xFFD8CCE3)
+// CubeVPN brand: near-black surfaces with a per-accent gradient.
+// Three hand-picked accents ship today; each carries its own light/dark/AMOLED
+// Material scheme plus a 3-stop brand gradient used by the logo, splash and cards.
+/** One accent's full look: brand gradient + the three color-scheme variants it drives. */
+internal class AccentPalette(
+    val theme: AccentTheme,
+    val gradient: List<Color>,
+    val glow: Color,
+    /** Vivid, never-dark stops for animated effects (the beam sweep) — unlike [gradient] this never dips near-black. */
+    val glowStops: List<Color>,
+    val splashBackground: Color,
+    val light: ColorScheme,
+    val dark: ColorScheme,
+    val amoled: ColorScheme
 )
 
-private val CubeDarkColors = darkColorScheme(
-    primary = Color(0xFFA855F7),
-    onPrimary = Color(0xFF1A0B2E),
-    primaryContainer = Color(0xFF3B1664),
-    onPrimaryContainer = Color(0xFFEBDCFF),
-    secondary = Color(0xFFC9A6E8),
-    onSecondary = Color(0xFF2A1444),
-    secondaryContainer = Color(0xFF241A33),
-    onSecondaryContainer = Color(0xFFEEE0F7),
-    background = Color(0xFF0D0619),
-    onBackground = Color(0xFFEDE7F3),
-    surface = Color(0xFF16101F),
-    onSurface = Color(0xFFEDE7F3),
-    surfaceVariant = Color(0xFF241A33),
-    onSurfaceVariant = Color(0xFFC3B3D6),
-    error = Color(0xFFFF6B81),
-    onError = Color(0xFF2A0A0F),
-    outline = Color(0xFF3E3153)
+private val VioletGradient = listOf(Color(0xFF1A0B2E), Color(0xFF6D28D9), Color(0xFFC026D3))
+private val AuroraGradient = listOf(Color(0xFF0B2545), Color(0xFF0EA5E9), Color(0xFF5EEAD4))
+private val EmberGradient = listOf(Color(0xFF1F0A05), Color(0xFFDD5B3E), Color(0xFFFFB25E))
+
+private val VioletPalette = AccentPalette(
+    theme = AccentTheme.VIOLET,
+    gradient = VioletGradient,
+    glow = Color(0xFFC026D3),
+    glowStops = listOf(Color(0xFFA855F7), Color(0xFFF07AD6), Color(0xFFC026D3)),
+    splashBackground = Color(0xFF0D0619),
+    light = lightColorScheme(
+        primary = Color(0xFF7C3AED),
+        onPrimary = Color(0xFFFFFFFF),
+        primaryContainer = Color(0xFFEDE1FF),
+        onPrimaryContainer = Color(0xFF2C0A5C),
+        secondary = Color(0xFF6B5A82),
+        onSecondary = Color(0xFFFFFFFF),
+        secondaryContainer = Color(0xFFEFE6F7),
+        onSecondaryContainer = Color(0xFF241934),
+        background = Color(0xFFFAF7FC),
+        onBackground = Color(0xFF1B1425),
+        surface = Color(0xFFFFFFFF),
+        onSurface = Color(0xFF1B1425),
+        surfaceVariant = Color(0xFFEDE6F4),
+        onSurfaceVariant = Color(0xFF5C5069),
+        error = Color(0xFFB3261E),
+        onError = Color(0xFFFFFFFF),
+        outline = Color(0xFFD8CCE3)
+    ),
+    dark = darkColorScheme(
+        primary = Color(0xFFA855F7),
+        onPrimary = Color(0xFF1A0B2E),
+        primaryContainer = Color(0xFF3B1664),
+        onPrimaryContainer = Color(0xFFEBDCFF),
+        secondary = Color(0xFFC9A6E8),
+        onSecondary = Color(0xFF2A1444),
+        secondaryContainer = Color(0xFF241A33),
+        onSecondaryContainer = Color(0xFFEEE0F7),
+        background = Color(0xFF0D0619),
+        onBackground = Color(0xFFEDE7F3),
+        surface = Color(0xFF16101F),
+        onSurface = Color(0xFFEDE7F3),
+        surfaceVariant = Color(0xFF241A33),
+        onSurfaceVariant = Color(0xFFC3B3D6),
+        error = Color(0xFFFF6B81),
+        onError = Color(0xFF2A0A0F),
+        outline = Color(0xFF3E3153)
+    ),
+    amoled = darkColorScheme(
+        primary = Color(0xFFA855F7),
+        onPrimary = Color(0xFF1A0B2E),
+        primaryContainer = Color(0xFF2A0F52),
+        onPrimaryContainer = Color(0xFFEBDCFF),
+        secondary = Color(0xFFC9A6E8),
+        onSecondary = Color(0xFF2A1444),
+        secondaryContainer = Color(0xFF140D1F),
+        onSecondaryContainer = Color(0xFFEEE0F7),
+        background = Color(0xFF000000),
+        onBackground = Color(0xFFEDE7F3),
+        surface = Color(0xFF000000),
+        onSurface = Color(0xFFEDE7F3),
+        surfaceVariant = Color(0xFF130C1D),
+        onSurfaceVariant = Color(0xFFC3B3D6),
+        error = Color(0xFFFF6B81),
+        onError = Color(0xFF2A0A0F),
+        outline = Color(0xFF2B2140)
+    )
 )
 
-private val CubeAmoledColors = darkColorScheme(
-    primary = Color(0xFFA855F7),
-    onPrimary = Color(0xFF1A0B2E),
-    primaryContainer = Color(0xFF2A0F52),
-    onPrimaryContainer = Color(0xFFEBDCFF),
-    secondary = Color(0xFFC9A6E8),
-    onSecondary = Color(0xFF2A1444),
-    secondaryContainer = Color(0xFF140D1F),
-    onSecondaryContainer = Color(0xFFEEE0F7),
-    background = Color(0xFF000000),
-    onBackground = Color(0xFFEDE7F3),
-    surface = Color(0xFF000000),
-    onSurface = Color(0xFFEDE7F3),
-    surfaceVariant = Color(0xFF130C1D),
-    onSurfaceVariant = Color(0xFFC3B3D6),
-    error = Color(0xFFFF6B81),
-    onError = Color(0xFF2A0A0F),
-    outline = Color(0xFF2B2140)
+/** Cool cyan-to-teal "Aurora" accent: a techy, secure feel as an alternative to the violet brand. */
+private val AuroraPalette = AccentPalette(
+    theme = AccentTheme.AURORA,
+    gradient = AuroraGradient,
+    glow = Color(0xFF22D3EE),
+    glowStops = listOf(Color(0xFF38BDF8), Color(0xFF22D3EE), Color(0xFF5EEAD4)),
+    splashBackground = Color(0xFF04121A),
+    light = lightColorScheme(
+        primary = Color(0xFF0E7FB0),
+        onPrimary = Color(0xFFFFFFFF),
+        primaryContainer = Color(0xFFD9F1FB),
+        onPrimaryContainer = Color(0xFF00344D),
+        secondary = Color(0xFF3D6B7F),
+        onSecondary = Color(0xFFFFFFFF),
+        secondaryContainer = Color(0xFFE1F1F7),
+        onSecondaryContainer = Color(0xFF13232B),
+        background = Color(0xFFF5FBFD),
+        onBackground = Color(0xFF0F1E24),
+        surface = Color(0xFFFFFFFF),
+        onSurface = Color(0xFF0F1E24),
+        surfaceVariant = Color(0xFFE3EEF2),
+        onSurfaceVariant = Color(0xFF4C5D63),
+        error = Color(0xFFB3261E),
+        onError = Color(0xFFFFFFFF),
+        outline = Color(0xFFC9DCE2)
+    ),
+    dark = darkColorScheme(
+        primary = Color(0xFF22D3EE),
+        onPrimary = Color(0xFF00232A),
+        primaryContainer = Color(0xFF0B4A5C),
+        onPrimaryContainer = Color(0xFFCFF7FF),
+        secondary = Color(0xFF8FD3E8),
+        onSecondary = Color(0xFF07303C),
+        secondaryContainer = Color(0xFF12303B),
+        onSecondaryContainer = Color(0xFFD7F0F7),
+        background = Color(0xFF04121A),
+        onBackground = Color(0xFFE3F1F5),
+        surface = Color(0xFF0A1B24),
+        onSurface = Color(0xFFE3F1F5),
+        surfaceVariant = Color(0xFF16303B),
+        onSurfaceVariant = Color(0xFFA9C4CE),
+        error = Color(0xFFFF6B81),
+        onError = Color(0xFF2A0A0F),
+        outline = Color(0xFF264048)
+    ),
+    amoled = darkColorScheme(
+        primary = Color(0xFF22D3EE),
+        onPrimary = Color(0xFF00232A),
+        primaryContainer = Color(0xFF072F3B),
+        onPrimaryContainer = Color(0xFFCFF7FF),
+        secondary = Color(0xFF8FD3E8),
+        onSecondary = Color(0xFF07303C),
+        secondaryContainer = Color(0xFF0A1F26),
+        onSecondaryContainer = Color(0xFFD7F0F7),
+        background = Color(0xFF000000),
+        onBackground = Color(0xFFE3F1F5),
+        surface = Color(0xFF000000),
+        onSurface = Color(0xFFE3F1F5),
+        surfaceVariant = Color(0xFF0B1A20),
+        onSurfaceVariant = Color(0xFFA9C4CE),
+        error = Color(0xFFFF6B81),
+        onError = Color(0xFF2A0A0F),
+        outline = Color(0xFF1B333B)
+    )
 )
+
+/** Warm coral-to-amber "Ember" accent: an energetic sunset alternative to the violet brand. */
+private val EmberPalette = AccentPalette(
+    theme = AccentTheme.EMBER,
+    gradient = EmberGradient,
+    glow = Color(0xFFFF8A5B),
+    glowStops = listOf(Color(0xFFFF8A5B), Color(0xFFFFB25E), Color(0xFFFFD166)),
+    splashBackground = Color(0xFF190E0A),
+    light = lightColorScheme(
+        primary = Color(0xFFDD5B3E),
+        onPrimary = Color(0xFFFFFFFF),
+        primaryContainer = Color(0xFFFFE4D9),
+        onPrimaryContainer = Color(0xFF441202),
+        secondary = Color(0xFF8A5A46),
+        onSecondary = Color(0xFFFFFFFF),
+        secondaryContainer = Color(0xFFF7E6DC),
+        onSecondaryContainer = Color(0xFF2E1A10),
+        background = Color(0xFFFFF8F5),
+        onBackground = Color(0xFF271711),
+        surface = Color(0xFFFFFFFF),
+        onSurface = Color(0xFF271711),
+        surfaceVariant = Color(0xFFF4E4DC),
+        onSurfaceVariant = Color(0xFF6B5548),
+        error = Color(0xFFB3261E),
+        onError = Color(0xFFFFFFFF),
+        outline = Color(0xFFE3CFC2)
+    ),
+    dark = darkColorScheme(
+        primary = Color(0xFFFF8A5B),
+        onPrimary = Color(0xFF3A0E02),
+        primaryContainer = Color(0xFF632A12),
+        onPrimaryContainer = Color(0xFFFFDBC9),
+        secondary = Color(0xFFE8B8A0),
+        onSecondary = Color(0xFF432110),
+        secondaryContainer = Color(0xFF3A2419),
+        onSecondaryContainer = Color(0xFFF4DCCB),
+        background = Color(0xFF190E0A),
+        onBackground = Color(0xFFF3E6DE),
+        surface = Color(0xFF20130D),
+        onSurface = Color(0xFFF3E6DE),
+        surfaceVariant = Color(0xFF3A2419),
+        onSurfaceVariant = Color(0xFFD6BBA9),
+        error = Color(0xFFFF6B81),
+        onError = Color(0xFF2A0A0F),
+        outline = Color(0xFF4E3628)
+    ),
+    amoled = darkColorScheme(
+        primary = Color(0xFFFF8A5B),
+        onPrimary = Color(0xFF3A0E02),
+        primaryContainer = Color(0xFF4A200D),
+        onPrimaryContainer = Color(0xFFFFDBC9),
+        secondary = Color(0xFFE8B8A0),
+        onSecondary = Color(0xFF432110),
+        secondaryContainer = Color(0xFF1B0F09),
+        onSecondaryContainer = Color(0xFFF4DCCB),
+        background = Color(0xFF000000),
+        onBackground = Color(0xFFF3E6DE),
+        surface = Color(0xFF000000),
+        onSurface = Color(0xFFF3E6DE),
+        surfaceVariant = Color(0xFF1B0F09),
+        onSurfaceVariant = Color(0xFFD6BBA9),
+        error = Color(0xFFFF6B81),
+        onError = Color(0xFF2A0A0F),
+        outline = Color(0xFF3A2419)
+    )
+)
+
+private fun accentPaletteOf(theme: AccentTheme): AccentPalette = when (theme) {
+    AccentTheme.VIOLET -> VioletPalette
+    AccentTheme.AURORA -> AuroraPalette
+    AccentTheme.EMBER -> EmberPalette
+}
+
+internal val LocalAccent = compositionLocalOf { VioletPalette as AccentPalette }
 
 internal val LocalLang = compositionLocalOf { Lang.EN }
 
@@ -325,11 +490,12 @@ private fun stringsFn(): (String) -> String {
 /** CubeVPN's mark: a routed path landing on a destination dot, on a black-to-red badge. */
 @Composable
 private fun CubeVpnMark(modifier: Modifier = Modifier, ringed: Boolean = false) {
+    val accent = LocalAccent.current
     Box(modifier, contentAlignment = Alignment.Center) {
         if (ringed) {
             Canvas(Modifier.matchParentSize()) {
                 drawCircle(
-                    color = Color(0xFFA855F7).copy(alpha = 0.5f),
+                    color = accent.glow.copy(alpha = 0.5f),
                     radius = size.minDimension / 2f,
                     style = Stroke(width = size.minDimension * 0.03f)
                 )
@@ -339,11 +505,7 @@ private fun CubeVpnMark(modifier: Modifier = Modifier, ringed: Boolean = false) 
             Modifier
                 .fillMaxSize(if (ringed) 0.8f else 1f)
                 .clip(CircleShape)
-                .background(
-                    Brush.linearGradient(
-                        listOf(Color(0xFF1A0B2E), Color(0xFF6D28D9), Color(0xFFC026D3))
-                    )
-                )
+                .background(Brush.linearGradient(accent.gradient))
         ) {
             Canvas(Modifier.fillMaxSize()) {
                 val w = size.width; val h = size.height
@@ -369,7 +531,7 @@ private fun CubeVpnWordmark(modifier: Modifier = Modifier, height: Dp = 34.dp, t
         Text(
             buildAnnotatedString {
                 append("Cube")
-                withStyle(SpanStyle(color = Color(0xFFA855F7))) { append("VPN") }
+                withStyle(SpanStyle(color = LocalAccent.current.glow)) { append("VPN") }
             },
             color = if (tint == Color.Unspecified) LocalContentColor.current else tint,
             fontWeight = FontWeight.Black,
@@ -418,7 +580,7 @@ private fun WelcomeScreen(onDone: () -> Unit) {
     Box(
         Modifier
             .fillMaxSize()
-            .background(SplashBackground),
+            .background(LocalAccent.current.splashBackground),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -477,7 +639,7 @@ private fun LanguagePickerScreen(onChoose: (Lang) -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
-            .background(SplashBackground)
+            .background(LocalAccent.current.splashBackground)
             .navigationBarsPadding()
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -810,16 +972,19 @@ class MainActivity : ComponentActivity() {
             controller.isAppearanceLightStatusBars = !dark
             val lang by store.lang.collectAsState()
             val direction = if (lang == Lang.FA) LayoutDirection.Rtl else LayoutDirection.Ltr
+            val accentTheme by store.accentTheme.collectAsState()
+            val accentPalette = accentPaletteOf(accentTheme)
 
             MaterialTheme(
-                colorScheme = if (!dark) CubeLightColors
-                else if (themeMode == ThemeMode.AMOLED) CubeAmoledColors
-                else CubeDarkColors,
+                colorScheme = if (!dark) accentPalette.light
+                else if (themeMode == ThemeMode.AMOLED) accentPalette.amoled
+                else accentPalette.dark,
                 typography = if (lang == Lang.FA) VazirTypography else LexendTypography
             ) {
                 CompositionLocalProvider(
                     LocalLang provides lang,
-                    LocalLayoutDirection provides direction
+                    LocalLayoutDirection provides direction,
+                    LocalAccent provides accentPalette
                 ) {
                     val langChosen by store.langChosen.collectAsState()
                     if (!langChosen) {
@@ -1413,7 +1578,11 @@ private fun CubeVpnApp(
                         "theme" -> ThemeSettingsScreen(store = store)
                         "cleanip" -> CleanIpScreen()
                         "donation" -> DonationScreen()
-                        "referral" -> ReferralScreen(user = accountUser)
+                        "referral" -> ReferralScreen(
+                            user = accountUser,
+                            error = if (accountUser == null) accountServicesError else null,
+                            onRetry = { refreshAccountServices() }
+                        )
                         else -> SettingsScreen(
                             store = store,
                             scrollState = settingsScroll,
@@ -1585,7 +1754,7 @@ private fun ConnectionScreen(
                     }
                     if (selectedConfig != null && glowAlpha > 0.001f) {
                         ConnectGlow(
-                            color = MaterialTheme.colorScheme.primary,
+                            colors = LocalAccent.current.glowStops,
                             alpha = glowAlpha,
                             modifier = Modifier.matchParentSize()
                         )
@@ -3023,7 +3192,7 @@ private fun SettingsScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Icon(Icons.Filled.Favorite, contentDescription = null,
-                    tint = Color(0xFFC026D3), modifier = Modifier.padding(end = 12.dp))
+                    tint = LocalAccent.current.glow, modifier = Modifier.padding(end = 12.dp))
                 Icon(Icons.Filled.ChevronRight, contentDescription = null)
             }
         }
@@ -3068,6 +3237,7 @@ private fun ThemeSettingsScreen(store: ConfigStore, modifier: Modifier = Modifie
     val t = stringsFn()
     val themeMode by store.themeMode.collectAsState()
     val globeStyle by store.globeStyle.collectAsState()
+    val accentTheme by store.accentTheme.collectAsState()
 
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -3098,6 +3268,31 @@ private fun ThemeSettingsScreen(store: ConfigStore, modifier: Modifier = Modifie
                 label = t("theme_system"),
                 selected = themeMode == ThemeMode.SYSTEM,
                 onClick = { store.setThemeMode(ThemeMode.SYSTEM) }
+            )
+        }
+
+        Text(t("accent_color_title"), style = MaterialTheme.typography.titleMedium)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            AccentSwatch(
+                palette = VioletPalette,
+                label = t("accent_violet"),
+                selected = accentTheme == AccentTheme.VIOLET,
+                onClick = { store.setAccentTheme(AccentTheme.VIOLET) },
+                modifier = Modifier.weight(1f)
+            )
+            AccentSwatch(
+                palette = AuroraPalette,
+                label = t("accent_aurora"),
+                selected = accentTheme == AccentTheme.AURORA,
+                onClick = { store.setAccentTheme(AccentTheme.AURORA) },
+                modifier = Modifier.weight(1f)
+            )
+            AccentSwatch(
+                palette = EmberPalette,
+                label = t("accent_ember"),
+                selected = accentTheme == AccentTheme.EMBER,
+                onClick = { store.setAccentTheme(AccentTheme.EMBER) },
+                modifier = Modifier.weight(1f)
             )
         }
 
@@ -3149,83 +3344,205 @@ private fun ThemeModeRow(
 }
 
 @Composable
-private fun ReferralScreen(user: AuthUser?, modifier: Modifier = Modifier) {
+private fun AccentSwatch(
+    palette: AccentPalette,
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val border = if (selected) MaterialTheme.colorScheme.primary
+    else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+    Column(
+        modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable { onClick() }
+            .border(BorderStroke(if (selected) 2.dp else 1.dp, border), RoundedCornerShape(16.dp))
+            .padding(vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(Brush.linearGradient(palette.gradient)),
+            contentAlignment = Alignment.Center
+        ) {
+            if (selected) Icon(
+                Icons.Filled.Check, contentDescription = null,
+                tint = Color.White, modifier = Modifier.size(18.dp)
+            )
+        }
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+private fun ReferralScreen(
+    user: AuthUser?,
+    modifier: Modifier = Modifier,
+    error: String? = null,
+    onRetry: () -> Unit = {}
+) {
     val t = stringsFn()
     val lang = LocalLang.current
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
+    val accent = LocalAccent.current
 
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Icon(
-            Icons.Filled.CardGiftcard,
-            contentDescription = null,
-            modifier = Modifier.padding(top = 8.dp).size(64.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            t("invite_friends_desc"),
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        if (user == null) {
-            CircularProgressIndicator(modifier = Modifier.padding(top = 24.dp))
-        } else {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-            ) {
-                Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(t("your_invite_code"), style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(
-                        user.inviteCode.ifBlank { "—" },
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(vertical = 8.dp)
+        Box(
+            Modifier.fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .background(Brush.linearGradient(accent.gradient))
+                .padding(24.dp)
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Box(
+                    Modifier.size(72.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Filled.CardGiftcard,
+                        contentDescription = null,
+                        modifier = Modifier.size(36.dp),
+                        tint = Color.White
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedButton(onClick = {
-                            clipboard.setText(AnnotatedString(user.inviteCode))
-                            android.widget.Toast.makeText(context, t("copied"), android.widget.Toast.LENGTH_SHORT).show()
-                        }, enabled = user.inviteCode.isNotBlank()) {
-                            Icon(Icons.Filled.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text(t("copy"))
+                }
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    t("invite_friends"),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    t("invite_friends_desc"),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = Color.White.copy(alpha = 0.85f)
+                )
+            }
+        }
+
+        when {
+            user != null -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                ) {
+                    Column(
+                        Modifier.fillMaxWidth().padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(t("your_invite_code"), style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Box(
+                            Modifier.padding(vertical = 10.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Brush.linearGradient(accent.gradient))
+                                .padding(horizontal = 22.dp, vertical = 10.dp)
+                        ) {
+                            Text(
+                                user.inviteCode.ifBlank { "—" },
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = Color.White
+                            )
                         }
-                        Button(onClick = {
-                            val send = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, t("invite_share_text").format(user.inviteCode))
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            OutlinedButton(onClick = {
+                                clipboard.setText(AnnotatedString(user.inviteCode))
+                                android.widget.Toast.makeText(context, t("copied"), android.widget.Toast.LENGTH_SHORT).show()
+                            }, enabled = user.inviteCode.isNotBlank()) {
+                                Icon(Icons.Filled.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(t("copy"))
                             }
-                            context.startActivity(Intent.createChooser(send, t("share")))
-                        }, enabled = user.inviteCode.isNotBlank()) {
-                            Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Button(onClick = {
+                                val send = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, t("invite_share_text").format(user.inviteCode))
+                                }
+                                context.startActivity(Intent.createChooser(send, t("share")))
+                            }, enabled = user.inviteCode.isNotBlank()) {
+                                Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(t("share"))
+                            }
+                        }
+                    }
+                }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                ) {
+                    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Filled.People,
+                            contentDescription = null,
+                            tint = accent.glow,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text(t("referral_count"), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                        Text(
+                            localizeDigits("${user.referralCount}", lang),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+            error != null -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                ) {
+                    Column(
+                        Modifier.fillMaxWidth().padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            Icons.Filled.CloudOff,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Text(
+                            error,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                        OutlinedButton(onClick = onRetry) {
+                            Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text(t("share"))
+                            Text(t("retry"))
                         }
                     }
                 }
             }
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-            ) {
-                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(t("referral_count"), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    Text(
-                        localizeDigits("${user.referralCount}", lang),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+            else -> {
+                Box(Modifier.fillMaxWidth().padding(top = 24.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
                 }
             }
         }
@@ -3964,8 +4281,17 @@ private fun StarRow(rating: Float, progress: Float = 1f) {
     }
 }
 
+/** Picks a color along a multi-stop gradient at position [t] (wraps past 1). */
+private fun gradientColorAt(colors: List<Color>, t: Float): Color {
+    if (colors.size <= 1) return colors.firstOrNull() ?: Color.White
+    val clamped = ((t % 1f) + 1f) % 1f
+    val scaled = clamped * (colors.size - 1)
+    val idx = scaled.toInt().coerceIn(0, colors.size - 2)
+    return lerp(colors[idx], colors[idx + 1], scaled - idx)
+}
+
 @Composable
-private fun ConnectGlow(color: Color, modifier: Modifier = Modifier, alpha: Float = 1f) {
+private fun ConnectGlow(colors: List<Color>, modifier: Modifier = Modifier, alpha: Float = 1f) {
     val tr = rememberInfiniteTransition(label = "connectBeam")
     val progress by tr.animateFloat(
         initialValue = 0f, targetValue = 1f,
@@ -3995,7 +4321,7 @@ private fun ConnectGlow(color: Color, modifier: Modifier = Modifier, alpha: Floa
                     val blobs = 16
                     val step = tailLen / blobs
                     fun at(dist: Float) = pm.getPosition(((dist % len) + len) % len)
-                    fun glow(c: Offset, r: Float, peak: Float) {
+                    fun glow(c: Offset, r: Float, peak: Float, color: Color) {
                         drawCircle(
                             brush = Brush.radialGradient(
                                 colorStops = arrayOf(
@@ -4013,10 +4339,11 @@ private fun ConnectGlow(color: Color, modifier: Modifier = Modifier, alpha: Floa
                         val frac = 1f - (k - 1f) / blobs
                         val a = frac * frac
                         if (a <= 0.01f) continue
-                        glow(at(head - k * step), 5.dp.toPx() + 7.dp.toPx() * frac, 0.6f * a)
+                        val tint = gradientColorAt(colors, progress - k * 0.02f)
+                        glow(at(head - k * step), 5.dp.toPx() + 7.dp.toPx() * frac, 0.6f * a, tint)
                     }
                     val hp = at(head)
-                    glow(hp, 12.dp.toPx(), 0.85f)
+                    glow(hp, 12.dp.toPx(), 0.85f, gradientColorAt(colors, progress))
                     drawCircle(
                         brush = Brush.radialGradient(
                             colorStops = arrayOf(
