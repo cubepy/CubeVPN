@@ -116,9 +116,13 @@ try {
         $subUrl = (string)($payload['subscription_url'] ?? '');
         if ($subUrl === '') continue; // nothing the app can subscribe to for this invoice
 
+        $name = trim((string)($payload['product_name'] ?? ''));
+        if ($name === '') $name = trim((string)($invoice['username'] ?? ''));
+        if ($name === '') $name = 'Service';
+
         $services[] = [
             'id' => (string)($invoice['id_invoice'] ?? $invoice['username'] ?? ''),
-            'name' => (string)($payload['product_name'] ?? $invoice['username'] ?? 'Service'),
+            'name' => $name,
             'subscription_url' => $subUrl,
             // Best-effort fallback; the subscription-userinfo header the app
             // reads from subscription_url itself is the source of truth.
