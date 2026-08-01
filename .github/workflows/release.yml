@@ -28,6 +28,23 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Verify signing secrets are configured
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          missing=()
+          [ -z "$KEYSTORE_BASE64" ] && missing+=("KEYSTORE_BASE64")
+          [ -z "$KEYSTORE_PASSWORD" ] && missing+=("KEYSTORE_PASSWORD")
+          [ -z "$KEY_ALIAS" ] && missing+=("KEY_ALIAS")
+          [ -z "$KEY_PASSWORD" ] && missing+=("KEY_PASSWORD")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing signing secret(s): ${missing[*]} — refusing to build an unsigned release APK. Set these under repo Settings > Secrets and variables > Actions (see docs/release-signing.md)."
+            exit 1
+          fi
+
       - name: Strip any proxy settings from gradle.properties
         run: |
           for f in gradle.properties gradle/gradle.properties gradle/gradle-daemon-jvm.properties; do
@@ -70,6 +87,21 @@ jobs:
           else
             ./gradlew assembleRelease --no-daemon
           fi
+
+      - name: Verify the built APKs are signed, and print the certificate fingerprint
+        run: |
+          APKSIGNER=$(find "${ANDROID_SDK_ROOT:-$ANDROID_HOME}/build-tools" -maxdepth 2 -name apksigner -type f | sort -V | tail -1)
+          if [ -z "$APKSIGNER" ]; then
+            echo "::error::apksigner not found under Android SDK build-tools"
+            exit 1
+          fi
+          for apk in app/build/outputs/apk/release/*.apk; do
+            echo "== $(basename "$apk") =="
+            "$APKSIGNER" verify --verbose --print-certs "$apk"
+          done
+          # Compare fingerprints against prior release runs at:
+          # https://github.com/${{ github.repository }}/actions/workflows/release.yml
+          # to confirm every release is signed with the same certificate.
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
