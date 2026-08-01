@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">CubeVPN</string>
+    <string name="widget_description">Connect or disconnect CubeVPN without opening the app</string>
 </resources>
