@@ -31,7 +31,21 @@ val secrets = Properties().apply {
     if (f.exists()) load(FileInputStream(f))
 }
 
-val appVersionName = "1.2.0"
+// CI passes -PreleaseVersionName=<tag without the leading v> when building off a `vX.Y.Z`
+// git tag (see .github/workflows/release.yml), so a tagged release's version metadata always
+// matches the tag instead of relying on someone remembering to bump this file by hand — a
+// mismatch here is exactly why a past "v1.2.1" release still installed/showed as 1.2.0.
+val releaseVersionName = (findProperty("releaseVersionName") as String?)?.trim()?.takeIf { it.isNotEmpty() }
+val appVersionName = releaseVersionName ?: "1.2.0"
+
+fun versionCodeFromName(name: String): Int {
+    val parts = name.split(".").map { it.filter(Char::isDigit).toIntOrNull() ?: 0 }
+    val major = parts.getOrElse(0) { 0 }
+    val minor = parts.getOrElse(1) { 0 }
+    val patch = parts.getOrElse(2) { 0 }
+    return major * 1_000_000 + minor * 1_000 + patch
+}
+val appVersionCode = releaseVersionName?.let(::versionCodeFromName) ?: 4
 
 android {
     namespace = "net.cubevpn.app"
@@ -45,7 +59,7 @@ android {
         applicationId = "net.cubevpn.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
+        versionCode = appVersionCode
         versionName = appVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "DEFAULT_SUB_URL", "\"${secrets.getProperty("DEFAULT_SUB_URL", "")}\"")
